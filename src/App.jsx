@@ -1,30 +1,88 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { TopicSelector } from './components/TopicSelector'
 import { PTTButton } from './components/PTTButton'
 import { HistorySidebar } from './components/HistorySidebar'
+import { CoachFeedback } from './components/CoachFeedback'
 import { useRecorder } from './hooks/useRecorder'
 import { transcribeAudio } from './services/gnaniStt'
+import { streamCoachingEvaluation } from './services/geminiCoach'
 
 export default function App() {
   const [topic, setTopic] = useState('')
-  const [appPhase, setAppPhase] = useState('idle') // 'idle' | 'recording' | 'processing' | 'done' | 'error'
+  const [appPhase, setAppPhase] = useState('idle') // 'idle' | 'recording' | 'processing' | 'coaching' | 'done' | 'error'
   const [transcript, setTranscript] = useState('')
   const [sttError, setSttError] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [audioUrl, setAudioUrl] = useState(null)
 
+  // Coach Feedback state (Phase 2)
+  const [coachFeedback, setCoachFeedback] = useState('')
+  const [isCoachStreaming, setIsCoachStreaming] = useState(false)
+  const [coachError, setCoachError] = useState(null)
+
   const recorder = useRecorder()
+  const abortControllerRef = useRef(null)
+
+  // Cancel any active streaming evaluation
+  const abortCurrentEvaluation = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+    setIsCoachStreaming(false)
+  }, [])
 
   // Sync recorder state with appPhase during active recording
   useEffect(() => {
     if (recorder.state === 'recording') {
+      abortCurrentEvaluation()
       setAppPhase('recording')
       setSttError(null)
+      setCoachError(null)
     } else if (recorder.state === 'error') {
       setAppPhase('error')
       setSttError(recorder.error || 'Microphone error')
     }
-  }, [recorder.state, recorder.error])
+  }, [recorder.state, recorder.error, abortCurrentEvaluation])
+
+  // Trigger Gemini streaming evaluation
+  const runCoachingEvaluation = useCallback(
+    (targetTopic, targetTranscript) => {
+      if (!targetTopic || !targetTranscript || targetTranscript.startsWith('(No speech')) {
+        return
+      }
+
+      abortCurrentEvaluation()
+      setCoachFeedback('')
+      setCoachError(null)
+      setIsCoachStreaming(true)
+      setAppPhase('coaching')
+
+      const controller = new AbortController()
+      abortControllerRef.current = controller
+
+      streamCoachingEvaluation({
+        topic: targetTopic,
+        transcript: targetTranscript,
+        signal: controller.signal,
+        onToken: (token) => {
+          setCoachFeedback((prev) => prev + token)
+        },
+        onDone: () => {
+          setIsCoachStreaming(false)
+          setAppPhase('done')
+          abortControllerRef.current = null
+        },
+        onError: (err) => {
+          setCoachError(err)
+          setIsCoachStreaming(false)
+          setAppPhase('error')
+          abortControllerRef.current = null
+        },
+      })
+    },
+    [abortCurrentEvaluation],
+  )
 
   // Handle audio processing when recorder stops with a valid blob
   useEffect(() => {
@@ -44,8 +102,16 @@ export default function App() {
 
       transcribeAudio(recorder.audioBlob, topic)
         .then((text) => {
-          setTranscript(text || '(No speech detected. Please speak clearly and try again.)')
-          setAppPhase('done')
+          const cleanText = text?.trim() || ''
+          if (!cleanText) {
+            setTranscript('(No speech detected. Please speak clearly and try again.)')
+            setAppPhase('done')
+            return
+          }
+
+          setTranscript(cleanText)
+          // Automatically pipe transcribed text into the Gemini coach evaluation
+          runCoachingEvaluation(topic, cleanText)
         })
         .catch((err) => {
           console.error('Transcription failure:', err)
@@ -53,20 +119,29 @@ export default function App() {
           setAppPhase('error')
         })
     }
-  }, [recorder.state, recorder.audioBlob, topic])
+  }, [recorder.state, recorder.audioBlob, topic, runCoachingEvaluation])
 
   const handleStartRecording = () => {
     if (!topic || topic.trim() === '') {
       setSttError('Please select or enter a target DSA topic first.')
       return
     }
+    abortCurrentEvaluation()
     setSttError(null)
+    setCoachError(null)
     setTranscript('')
+    setCoachFeedback('')
     recorder.startRecording()
   }
 
   const handleStopRecording = () => {
     recorder.stopRecording()
+  }
+
+  const handleRetryCoaching = () => {
+    if (topic && transcript && !transcript.startsWith('(No speech')) {
+      runCoachingEvaluation(topic, transcript)
+    }
   }
 
   return (
@@ -90,14 +165,21 @@ export default function App() {
                 Hinglish<span className="text-green-400">CS</span> Coach
               </h1>
               <span className="hidden md:inline text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">
-                Phase 1 MVP
+                Phase 2 Brain
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 font-mono text-xs text-gray-400">
-            <span className="hidden sm:inline">Engine:</span>
-            <span className="text-green-400 font-semibold">Gnani Prisma v3</span>
+          <div className="flex items-center gap-3 font-mono text-xs text-gray-400">
+            <div className="flex items-center gap-1.5">
+              <span className="text-gray-500 hidden sm:inline">STT:</span>
+              <span className="text-gray-300">Gnani Prisma</span>
+            </div>
+            <span className="text-gray-700">•</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-gray-500 hidden sm:inline">Brain:</span>
+              <span className="text-green-400 font-semibold">Gemini 2.5 Flash</span>
+            </div>
           </div>
         </div>
       </header>
@@ -130,9 +212,11 @@ export default function App() {
             <span
               className={`text-xs font-mono px-2 py-0.5 rounded ${
                 appPhase === 'recording'
-                  ? 'bg-red-950 text-red-400 border border-red-800/80'
+                  ? 'bg-red-950 text-red-400 border border-red-800/80 animate-pulse'
                   : appPhase === 'processing'
                   ? 'bg-yellow-950 text-yellow-400 border border-yellow-800/80'
+                  : appPhase === 'coaching'
+                  ? 'bg-purple-950 text-purple-400 border border-purple-800/80'
                   : appPhase === 'done'
                   ? 'bg-green-950 text-green-400 border border-green-800/80'
                   : 'bg-gray-800 text-gray-400'
@@ -144,7 +228,7 @@ export default function App() {
 
           {/* Large PTT Button */}
           <PTTButton
-            recorderState={appPhase}
+            recorderState={appPhase === 'coaching' ? 'idle' : appPhase}
             secondsRecorded={recorder.secondsRecorded}
             maxSeconds={recorder.maxSeconds}
             onStart={handleStartRecording}
@@ -168,7 +252,7 @@ export default function App() {
             </div>
           )}
 
-          {/* Error Banner */}
+          {/* STT Error Banner */}
           {sttError && (
             <div className="w-full mt-2 p-3 rounded-lg bg-red-950/60 border border-red-800/80 text-red-300 font-mono text-xs flex items-start gap-2">
               <span className="text-red-400 font-bold">!</span>
@@ -181,7 +265,7 @@ export default function App() {
         <section className="bg-gray-900/80 rounded-xl border border-gray-800 p-5 shadow-xl space-y-3">
           <div className="flex items-center justify-between border-b border-gray-800/80 pb-3">
             <span className="text-xs font-mono text-gray-400">stt://transcript-output</span>
-            {transcript && (
+            {transcript && !transcript.startsWith('(No speech') && (
               <span className="text-[11px] font-mono text-green-400">
                 ✓ Transcribed successfully
               </span>
@@ -204,19 +288,13 @@ export default function App() {
           </div>
         </section>
 
-        {/* Terminal Card 4: Coach Feedback (Phase 2 Placeholder) */}
-        <section className="bg-gray-900/40 rounded-xl border border-dashed border-gray-800 p-5 space-y-3">
-          <div className="flex items-center justify-between border-b border-gray-800/60 pb-3">
-            <span className="text-xs font-mono text-gray-500">coach://gemini-evaluation</span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-800 text-gray-500">
-              Phase 2 Scope
-            </span>
-          </div>
-
-          <div className="p-4 rounded-lg bg-gray-950/40 border border-gray-900 text-xs font-mono text-gray-500 italic flex items-center justify-center text-center">
-            Coach feedback & evaluation (The Brain - Gemini) will stream here in Phase 2.
-          </div>
-        </section>
+        {/* Terminal Card 4: Coach Feedback (Phase 2 Active) */}
+        <CoachFeedback
+          feedbackText={coachFeedback}
+          isStreaming={isCoachStreaming}
+          error={coachError}
+          onRetry={handleRetryCoaching}
+        />
       </main>
 
       {/* History Slide-out Drawer */}
