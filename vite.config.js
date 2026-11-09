@@ -42,21 +42,6 @@ export default defineConfig(({ mode }) => {
             }
 
             const apiKey = env.GEMINI_API_KEY || process.env.GEMINI_API_KEY
-            if (!apiKey || apiKey.trim() === '' || apiKey === 'your_gemini_api_key_here') {
-              res.writeHead(200, {
-                'Content-Type': 'text/event-stream',
-                'Cache-Control': 'no-cache, no-transform',
-                'Connection': 'keep-alive',
-              })
-              res.write(
-                `data: ${JSON.stringify({
-                  error:
-                    'GEMINI_API_KEY is missing or empty. Please set your Gemini API key in the .env file in the project root.',
-                })}\n\n`,
-              )
-              res.write('data: [DONE]\n\n')
-              return res.end()
-            }
 
             // Set Server-Sent Events headers
             res.writeHead(200, {
@@ -71,8 +56,14 @@ export default defineConfig(({ mode }) => {
             })
 
             try {
+              if (!apiKey || apiKey.trim() === '' || apiKey === 'your_gemini_api_key_here') {
+                throw new Error(
+                  'GEMINI_API_KEY is missing or empty. Please set your Gemini API key in the .env file in the project root.',
+                )
+              }
+
               const ai = new GoogleGenAI({ apiKey })
-              const stream = await ai.models.generateContentStream({
+              const response = await ai.models.generateContentStream({
                 model: 'gemini-3.8-flash',
                 config: {
                   systemInstruction: SYSTEM_INSTRUCTION,
@@ -81,27 +72,30 @@ export default defineConfig(({ mode }) => {
                 contents: [formatUserPrompt(topic, transcript)],
               })
 
+              const stream = response.stream || response
               for await (const chunk of stream) {
                 if (isAborted) break
-                if (chunk.text) {
-                  res.write(`data: ${JSON.stringify({ text: chunk.text })}\n\n`)
+                const chunkText = chunk.text || ''
+                if (chunkText) {
+                  console.log('Gemini stream chunk:', chunkText)
+                  res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`)
                 }
               }
 
               if (!isAborted) {
-                res.write('data: [DONE]\n\n')
+                res.write('event: done\ndata: {}\n\n')
+                res.end()
               }
-            } catch (error) {
-              console.error('Gemini stream error:', error)
+            } catch (err) {
+              console.error('Gemini error:', err)
               if (!isAborted) {
                 res.write(
-                  `data: ${JSON.stringify({
-                    error: error.message || 'Failed to stream response from Gemini',
+                  `event: error\ndata: ${JSON.stringify({
+                    message: err.message || 'Unknown error',
                   })}\n\n`,
                 )
+                res.end()
               }
-            } finally {
-              res.end()
             }
           })
         },
