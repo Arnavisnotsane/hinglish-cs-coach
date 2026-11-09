@@ -178,7 +178,7 @@ export default function App() {
             <span className="text-gray-700">•</span>
             <div className="flex items-center gap-1.5">
               <span className="text-gray-500 hidden sm:inline">Brain:</span>
-              <span className="text-green-400 font-semibold">Gemini 2.5 Flash</span>
+              <span className="text-green-400 font-semibold">Gemini 3.8 Flash</span>
             </div>
           </div>
         </div>

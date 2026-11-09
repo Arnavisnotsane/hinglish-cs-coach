@@ -21,7 +21,7 @@ const ai = new GoogleGenAI({
 ### Streaming Pattern
 ```javascript
 const responseStream = await ai.models.generateContentStream({
-  model: 'gemini-2.5-flash',
+  model: 'gemini-3.8-flash',
   config: {
     systemInstruction: SYSTEM_PROMPT,
     temperature: 0.4, // lower temperature for consistent technical grading

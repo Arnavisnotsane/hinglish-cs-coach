@@ -64,7 +64,7 @@ Update `e:\Antigravity\hinglish-cs-coach\vite.config.js` to add custom middlewar
        'Connection': 'keep-alive',
      })
      ```
-   - Call `ai.models.generateContentStream({ model: 'gemini-2.5-flash', config: { systemInstruction }, contents: [...] })`.
+   - Call `ai.models.generateContentStream({ model: 'gemini-3.8-flash', config: { systemInstruction }, contents: [...] })`.
    - Loop `for await (const chunk of stream)` and write `res.write('data: ' + JSON.stringify({ text: chunk.text }) + '\n\n')`.
    - Flush `res.write('data: [DONE]\n\n')` and call `res.end()`.
    - Handle errors gracefully by sending `res.write('data: ' + JSON.stringify({ error: err.message }) + '\n\n')` before ending.

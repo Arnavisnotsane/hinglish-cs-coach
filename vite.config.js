@@ -73,7 +73,7 @@ export default defineConfig(({ mode }) => {
             try {
               const ai = new GoogleGenAI({ apiKey })
               const stream = await ai.models.generateContentStream({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-3.8-flash',
                 config: {
                   systemInstruction: SYSTEM_INSTRUCTION,
                   temperature: 0.4,

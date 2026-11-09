@@ -21,7 +21,7 @@
 
 2. **Vite Dev Server SSE Streaming Middleware (`vite.config.js`):**
    - Configured custom Connect middleware at `/api/gemini-stream` via the `gemini-stream-server` Vite plugin.
-   - Directly connects to `@google/genai` (`gemini-2.5-flash`) on the server side so that `GEMINI_API_KEY` is never exposed in the browser bundle.
+   - Directly connects to `@google/genai` (`gemini-3.8-flash`) on the server side so that `GEMINI_API_KEY` is never exposed in the browser bundle.
    - Streams tokens via Server-Sent Events (`text/event-stream`).
    - Integrated client abort detection (`req.on('close')`) to stop upstream AI generation when the user cancels or re-records.
    - Built-in friendly check and instruction if `GEMINI_API_KEY` is not yet configured.

@@ -38,7 +38,7 @@ The system prompt will enforce an evaluation structure consisting of:
 **Decision:** Vite dev server proxy middleware (`/api/gemini-stream`) with Server-Sent Events (SSE).
 - `GEMINI_API_KEY` stays strictly server-side in `.env` (never exposed to client bundles).
 - Vite dev server middleware in `vite.config.js` receives `POST /api/gemini-stream` with `{ topic, transcript }`.
-- Backend uses the official `@google/genai` SDK to call `ai.models.generateContentStream` with model `gemini-2.5-flash` (or fallback `gemini-2.0-flash`).
+- Backend uses the official `@google/genai` SDK to call `ai.models.generateContentStream` with model `gemini-3.8-flash`.
 - Streams chunks to client via `text/event-stream` (SSE format: `data: <chunk>\n\n`).
 - Client frontend reads the stream via `fetch` + `ReadableStreamDefaultReader` and appends tokens into the UI in real time.
 
