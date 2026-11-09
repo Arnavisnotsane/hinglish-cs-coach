@@ -114,6 +114,17 @@ export default defineConfig(({ mode }) => {
             })
           },
         },
+        '/api/gnani-tts': {
+          target: 'https://api.vachana.ai',
+          changeOrigin: true,
+          secure: true,
+          rewrite: () => '/api/v1/tts/inference',
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              proxyReq.setHeader('X-API-Key-ID', env.GNANI_API_KEY)
+            })
+          },
+        },
       },
     },
   }

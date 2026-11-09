@@ -3,9 +3,12 @@ import { TopicSelector } from './components/TopicSelector'
 import { PTTButton } from './components/PTTButton'
 import { HistorySidebar } from './components/HistorySidebar'
 import { CoachFeedback } from './components/CoachFeedback'
+import { AudioPlayerWidget } from './components/AudioPlayerWidget'
 import { useRecorder } from './hooks/useRecorder'
 import { transcribeAudio } from './services/gnaniStt'
 import { streamCoachingEvaluation } from './services/geminiCoach'
+import { extractVerbalSummary, extractScore, synthesizeSpeech } from './services/gnaniTts'
+import { getStoredSessions, saveSession, deleteSession, clearAllSessions } from './services/historyStorage'
 
 export default function App() {
   const [topic, setTopic] = useState('')
@@ -19,6 +22,15 @@ export default function App() {
   const [coachFeedback, setCoachFeedback] = useState('')
   const [isCoachStreaming, setIsCoachStreaming] = useState(false)
   const [coachError, setCoachError] = useState(null)
+
+  // TTS & Voice feedback state (Phase 3)
+  const [verbalSummaryText, setVerbalSummaryText] = useState('')
+  const [ttsAudioBlob, setTtsAudioBlob] = useState(null)
+  const [isTtsLoading, setIsTtsLoading] = useState(false)
+  const [ttsError, setTtsError] = useState(null)
+
+  // Session History state (Phase 3)
+  const [sessions, setSessions] = useState(() => getStoredSessions())
 
   const recorder = useRecorder()
   const abortControllerRef = useRef(null)
@@ -39,13 +51,15 @@ export default function App() {
       setAppPhase('recording')
       setSttError(null)
       setCoachError(null)
+      setTtsAudioBlob(null)
+      setTtsError(null)
     } else if (recorder.state === 'error') {
       setAppPhase('error')
       setSttError(recorder.error || 'Microphone error')
     }
   }, [recorder.state, recorder.error, abortCurrentEvaluation])
 
-  // Trigger Gemini streaming evaluation
+  // Trigger Gemini streaming evaluation + automatic Gnani TTS voice synthesis
   const runCoachingEvaluation = useCallback(
     (targetTopic, targetTranscript) => {
       if (!targetTopic || !targetTranscript || targetTranscript.startsWith('(No speech')) {
@@ -55,23 +69,59 @@ export default function App() {
       abortCurrentEvaluation()
       setCoachFeedback('')
       setCoachError(null)
+      setVerbalSummaryText('')
+      setTtsAudioBlob(null)
+      setTtsError(null)
       setIsCoachStreaming(true)
       setAppPhase('coaching')
 
       const controller = new AbortController()
       abortControllerRef.current = controller
 
+      let accumulatedFeedback = ''
+
       streamCoachingEvaluation({
         topic: targetTopic,
         transcript: targetTranscript,
         signal: controller.signal,
         onToken: (token) => {
+          accumulatedFeedback += token
           setCoachFeedback((prev) => prev + token)
         },
-        onDone: () => {
+        onDone: async () => {
           setIsCoachStreaming(false)
           setAppPhase('done')
           abortControllerRef.current = null
+
+          // Phase 3: Extract verbal summary & numeric score
+          const summary = extractVerbalSummary(accumulatedFeedback)
+          const score = extractScore(accumulatedFeedback)
+          setVerbalSummaryText(summary)
+
+          // Persist completed evaluation into localStorage history
+          const updatedSessions = saveSession({
+            topic: targetTopic,
+            transcript: targetTranscript,
+            feedback: accumulatedFeedback,
+            score,
+            verbalSummary: summary,
+          })
+          setSessions(updatedSessions)
+
+          // Phase 3: Automatically vocalize verbal verdict via Gnani Timbre Avinash
+          if (summary) {
+            setIsTtsLoading(true)
+            setTtsError(null)
+            try {
+              const audioBlob = await synthesizeSpeech(summary)
+              setTtsAudioBlob(audioBlob)
+            } catch (err) {
+              console.error('TTS synthesis failed:', err)
+              setTtsError(err.message || 'Failed to synthesize coach audio.')
+            } finally {
+              setIsTtsLoading(false)
+            }
+          }
         },
         onError: (err) => {
           setCoachError(err)
@@ -110,7 +160,7 @@ export default function App() {
           }
 
           setTranscript(cleanText)
-          // Automatically pipe transcribed text into the Gemini coach evaluation
+          // Automatically pipe transcribed text into Gemini coaching + TTS
           runCoachingEvaluation(topic, cleanText)
         })
         .catch((err) => {
@@ -131,6 +181,9 @@ export default function App() {
     setCoachError(null)
     setTranscript('')
     setCoachFeedback('')
+    setVerbalSummaryText('')
+    setTtsAudioBlob(null)
+    setTtsError(null)
     recorder.startRecording()
   }
 
@@ -144,6 +197,47 @@ export default function App() {
     }
   }
 
+  // Restore past session when selected from History drawer
+  const handleSelectSession = (session) => {
+    if (!session) return
+    abortCurrentEvaluation()
+    setTopic(session.topic)
+    setTranscript(session.transcript || '')
+    setCoachFeedback(session.feedback || '')
+    setVerbalSummaryText(session.verbalSummary || '')
+    setTtsAudioBlob(null)
+    setTtsError(null)
+    setSttError(null)
+    setCoachError(null)
+    setAppPhase('done')
+  }
+
+  // On-demand TTS synthesis for restored session
+  const handleSynthesizePastSession = async () => {
+    if (!verbalSummaryText) return
+    setIsTtsLoading(true)
+    setTtsError(null)
+    try {
+      const audioBlob = await synthesizeSpeech(verbalSummaryText)
+      setTtsAudioBlob(audioBlob)
+    } catch (err) {
+      console.error('TTS replay failed:', err)
+      setTtsError(err.message || 'Failed to synthesize coach audio.')
+    } finally {
+      setIsTtsLoading(false)
+    }
+  }
+
+  const handleDeleteSession = (sessionId) => {
+    const updated = deleteSession(sessionId)
+    setSessions(updated)
+  }
+
+  const handleClearAllSessions = () => {
+    const updated = clearAllSessions()
+    setSessions(updated)
+  }
+
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col font-sans selection:bg-green-500/30 selection:text-green-300">
       {/* Top Navbar */}
@@ -153,11 +247,16 @@ export default function App() {
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
-              className="p-2 rounded-md bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-green-400 font-mono text-sm border border-gray-700 flex items-center gap-2 transition-colors"
+              className="p-2 rounded-md bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-green-400 font-mono text-sm border border-gray-700 flex items-center gap-2 transition-colors relative"
               title="Open History"
             >
               <span>☰</span>
               <span className="hidden sm:inline text-xs font-semibold">History</span>
+              {sessions.length > 0 && (
+                <span className="inline-flex items-center justify-center px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-green-500/20 text-green-400 border border-green-500/30">
+                  {sessions.length}
+                </span>
+              )}
             </button>
             <div className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse" />
@@ -165,20 +264,25 @@ export default function App() {
                 Hinglish<span className="text-green-400">CS</span> Coach
               </h1>
               <span className="hidden md:inline text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">
-                Phase 2 Brain
+                Phase 3 Full Stack
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 font-mono text-xs text-gray-400">
-            <div className="flex items-center gap-1.5">
-              <span className="text-gray-500 hidden sm:inline">STT:</span>
-              <span className="text-gray-300">Gnani Prisma</span>
+          <div className="flex items-center gap-2.5 font-mono text-xs text-gray-400">
+            <div className="flex items-center gap-1">
+              <span className="text-gray-500 hidden sm:inline">Ears:</span>
+              <span className="text-gray-300">Prisma</span>
             </div>
             <span className="text-gray-700">•</span>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               <span className="text-gray-500 hidden sm:inline">Brain:</span>
-              <span className="text-green-400 font-semibold">Gemini 3.8 Flash</span>
+              <span className="text-green-400 font-semibold">Gemini 3.8</span>
+            </div>
+            <span className="text-gray-700">•</span>
+            <div className="flex items-center gap-1">
+              <span className="text-gray-500 hidden sm:inline">Mouth:</span>
+              <span className="text-purple-400 font-semibold">Avinash</span>
             </div>
           </div>
         </div>
@@ -246,7 +350,7 @@ export default function App() {
           {audioUrl && appPhase !== 'recording' && (
             <div className="w-full pt-2 flex flex-col items-center">
               <span className="text-[11px] font-mono text-gray-500 mb-1">
-                Last recorded WAV (16kHz mono)
+                Your Spoken Recording (16kHz mono WAV)
               </span>
               <audio controls src={audioUrl} className="h-8 w-full max-w-md opacity-80" />
             </div>
@@ -288,7 +392,32 @@ export default function App() {
           </div>
         </section>
 
-        {/* Terminal Card 4: Coach Feedback (Phase 2 Active) */}
+        {/* Terminal Card 4: Audio Voice Coach (Phase 3 Mouth) */}
+        {(ttsAudioBlob || isTtsLoading || ttsError || verbalSummaryText) && (
+          <section className="space-y-2">
+            <AudioPlayerWidget
+              audioBlob={ttsAudioBlob}
+              isLoading={isTtsLoading}
+              error={ttsError}
+              verbalSummary={verbalSummaryText}
+              autoPlay={true}
+              onReplay={handleSynthesizePastSession}
+            />
+            {verbalSummaryText && !ttsAudioBlob && !isTtsLoading && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleSynthesizePastSession}
+                  className="text-xs font-mono text-green-400 hover:text-green-300 flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-green-950/40 border border-green-800/50 hover:bg-green-950/70 transition-colors"
+                >
+                  <span>🔊</span> Listen to Coach Verdict
+                </button>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Terminal Card 5: Coach Scorecard (Phase 2 Brain) */}
         <CoachFeedback
           feedbackText={coachFeedback}
           isStreaming={isCoachStreaming}
@@ -301,7 +430,10 @@ export default function App() {
       <HistorySidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        sessions={[]}
+        sessions={sessions}
+        onSelectSession={handleSelectSession}
+        onDeleteSession={handleDeleteSession}
+        onClearAll={handleClearAllSessions}
       />
     </div>
   )
