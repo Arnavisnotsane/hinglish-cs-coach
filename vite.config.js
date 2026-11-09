@@ -44,11 +44,14 @@ export default defineConfig(({ mode }) => {
             const apiKey = env.GEMINI_API_KEY || process.env.GEMINI_API_KEY
 
             // Set Server-Sent Events headers
+            res.setHeader('X-Accel-Buffering', 'no')
             res.writeHead(200, {
               'Content-Type': 'text/event-stream',
               'Cache-Control': 'no-cache, no-transform',
               'Connection': 'keep-alive',
+              'X-Accel-Buffering': 'no',
             })
+            res.flushHeaders?.()
 
             let isAborted = false
             req.on('close', () => {
@@ -68,6 +71,9 @@ export default defineConfig(({ mode }) => {
                 config: {
                   systemInstruction: SYSTEM_INSTRUCTION,
                   temperature: 0.4,
+                  thinkingConfig: {
+                    thinkingBudget: 0,
+                  },
                 },
                 contents: [formatUserPrompt(topic, transcript)],
               })

@@ -79,6 +79,7 @@ export default function App() {
       abortControllerRef.current = controller
 
       let accumulatedFeedback = ''
+      let ttsTriggered = false
 
       streamCoachingEvaluation({
         topic: targetTopic,
@@ -87,16 +88,51 @@ export default function App() {
         onToken: (token) => {
           accumulatedFeedback += token
           setCoachFeedback((prev) => prev + token)
+
+          // Latency Optimization: As soon as the Score heading appears, the Verbal Summary
+          // is complete. Immediately trigger Gnani TTS speech synthesis in parallel!
+          if (
+            !ttsTriggered &&
+            (accumulatedFeedback.includes('### 📊 Score') ||
+              accumulatedFeedback.includes('Score:') ||
+              accumulatedFeedback.includes('### Score'))
+          ) {
+            const earlySummary = extractVerbalSummary(accumulatedFeedback)
+            if (earlySummary) {
+              ttsTriggered = true
+              setVerbalSummaryText(earlySummary)
+              setIsTtsLoading(true)
+              setTtsError(null)
+
+              synthesizeSpeech(earlySummary)
+                .then((audioBlob) => {
+                  if (!controller.signal.aborted) {
+                    setTtsAudioBlob(audioBlob)
+                  }
+                })
+                .catch((err) => {
+                  if (!controller.signal.aborted) {
+                    console.error('Parallel TTS synthesis failed:', err)
+                    setTtsError(err.message || 'Failed to synthesize coach audio.')
+                  }
+                })
+                .finally(() => {
+                  if (!controller.signal.aborted) {
+                    setIsTtsLoading(false)
+                  }
+                })
+            }
+          }
         },
         onDone: async () => {
           setIsCoachStreaming(false)
           setAppPhase('done')
           abortControllerRef.current = null
 
-          // Phase 3: Extract verbal summary & numeric score
+          // Extract verbal summary & numeric score
           const summary = extractVerbalSummary(accumulatedFeedback)
           const score = extractScore(accumulatedFeedback)
-          setVerbalSummaryText(summary)
+          if (summary) setVerbalSummaryText(summary)
 
           // Persist completed evaluation into localStorage history
           const updatedSessions = saveSession({
@@ -108,18 +144,25 @@ export default function App() {
           })
           setSessions(updatedSessions)
 
-          // Phase 3: Automatically vocalize verbal verdict via Gnani Timbre Avinash
-          if (summary) {
+          // Fallback: If TTS was not triggered early, synthesize now
+          if (!ttsTriggered && summary) {
+            ttsTriggered = true
             setIsTtsLoading(true)
             setTtsError(null)
             try {
               const audioBlob = await synthesizeSpeech(summary)
-              setTtsAudioBlob(audioBlob)
+              if (!controller.signal.aborted) {
+                setTtsAudioBlob(audioBlob)
+              }
             } catch (err) {
-              console.error('TTS synthesis failed:', err)
-              setTtsError(err.message || 'Failed to synthesize coach audio.')
+              if (!controller.signal.aborted) {
+                console.error('Fallback TTS synthesis failed:', err)
+                setTtsError(err.message || 'Failed to synthesize coach audio.')
+              }
             } finally {
-              setIsTtsLoading(false)
+              if (!controller.signal.aborted) {
+                setIsTtsLoading(false)
+              }
             }
           }
         },
