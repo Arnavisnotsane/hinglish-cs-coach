@@ -66,7 +66,7 @@ export default defineConfig(({ mode }) => {
               }
 
               const ai = new GoogleGenAI({ apiKey })
-              const FALLBACK_MODELS = ['gemini-3.8-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
+              const FALLBACK_MODELS = ['gemini-2.0-flash', 'gemini-2.5-flash']
               let streamSuccess = false
               let lastError = null
 
@@ -80,11 +80,9 @@ export default defineConfig(({ mode }) => {
                     config: {
                       systemInstruction: SYSTEM_INSTRUCTION,
                       temperature: 0.4,
-                      ...(model !== 'gemini-1.5-flash' && {
-                        thinkingConfig: {
-                          thinkingBudget: 0,
-                        },
-                      }),
+                      thinkingConfig: {
+                        thinkingBudget: 0,
+                      },
                     },
                     contents: [formatUserPrompt(topic, transcript)],
                   })
