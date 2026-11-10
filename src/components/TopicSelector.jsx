@@ -48,28 +48,30 @@ export function TopicSelector({ value, onChange }) {
   }
 
   return (
-    <div className="flex flex-col gap-1.5 w-full bg-zinc-900/70 border border-zinc-800/80 rounded-lg p-3">
-      <div className="flex items-center justify-between text-[11px] font-mono tracking-wider text-zinc-400">
-        <span className="uppercase font-semibold">TARGET DSA TOPIC</span>
+    <div className="rounded-2xl bg-white/5 border border-white/10 p-4 flex flex-col gap-2.5 w-full">
+      <div className="flex items-center justify-between text-xs font-medium tracking-wide text-zinc-300">
+        <span className="uppercase text-[11px] font-mono tracking-wider font-semibold text-zinc-400">
+          TARGET DSA TOPIC
+        </span>
         {value ? (
-          <span className="text-emerald-400 text-[10px] font-mono truncate max-w-[160px]">
+          <span className="rounded-full px-2.5 py-0.5 bg-[#2727E6]/15 border border-[#2727E6]/30 text-white text-[11px] font-mono truncate max-w-[200px]">
             ● {value}
           </span>
         ) : (
-          <span className="text-zinc-500 text-[10px]">Select to start</span>
+          <span className="text-zinc-500 text-[11px] font-mono">Select to start</span>
         )}
       </div>
 
       <select
         value={selectedOption}
         onChange={handleSelectChange}
-        className="w-full bg-zinc-950 text-zinc-200 font-mono text-xs border border-zinc-800 hover:border-zinc-700 rounded px-2.5 py-2 focus:outline-none focus:border-zinc-600 focus:ring-1 focus:ring-zinc-600 transition-colors"
+        className="w-full bg-[#0D0E1A] text-white font-sans text-sm border border-white/10 hover:border-white/20 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-[#2727E6] focus:ring-1 focus:ring-[#2727E6] transition-colors"
       >
-        <option value="" disabled className="text-zinc-500">
+        <option value="" disabled className="text-zinc-500 bg-[#0D0E1A]">
           -- Select DSA topic to explain --
         </option>
         {TOPICS.map((t) => (
-          <option key={t} value={t} className="bg-zinc-900 text-zinc-200">
+          <option key={t} value={t} className="bg-[#131422] text-white">
             {t}
           </option>
         ))}
@@ -82,7 +84,7 @@ export function TopicSelector({ value, onChange }) {
           value={customTopic}
           onChange={handleCustomChange}
           autoFocus
-          className="w-full bg-zinc-950 text-emerald-300 font-mono text-xs border border-zinc-700/80 rounded px-2.5 py-2 focus:outline-none focus:border-emerald-500/80 focus:ring-1 focus:ring-emerald-500/80 transition-colors placeholder:text-zinc-600 mt-1"
+          className="w-full bg-[#0D0E1A] text-white font-sans text-sm border border-[#2727E6]/40 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-[#2727E6] focus:ring-1 focus:ring-[#2727E6] transition-colors placeholder:text-zinc-500 mt-1"
         />
       )}
     </div>

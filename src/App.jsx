@@ -286,67 +286,70 @@ export default function App() {
   }
 
   return (
-    <div className="lg:h-screen lg:overflow-hidden flex flex-col bg-zinc-950 text-zinc-100 font-sans selection:bg-emerald-500/30 selection:text-emerald-300">
-      {/* Top Header: 48px Compact Bar */}
-      <header className="h-12 border-b border-zinc-800/80 bg-zinc-950/90 backdrop-blur shrink-0 px-4 flex items-center justify-between z-30">
-        <div className="flex items-center gap-3">
-          {/* History Drawer Trigger */}
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            className="px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-emerald-400 font-mono text-xs border border-zinc-800 flex items-center gap-1.5 transition-colors"
-            title="Open History"
-          >
-            <span>☰</span>
-            <span className="hidden sm:inline font-semibold">History</span>
-            {sessions.length > 0 && (
-              <span className="inline-flex items-center justify-center px-1 py-0.2 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                {sessions.length}
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden flex flex-col bg-[#0D0E1A] text-zinc-100 font-sans selection:bg-[#2727E6]/30 selection:text-white">
+      {/* 1. Floating Pill Navigation Bar */}
+      <header className="p-3 md:p-4 shrink-0 z-30">
+        <div className="max-w-[128rem] mx-auto bg-[#131422]/90 backdrop-blur-md border border-white/10 rounded-3xl px-5 h-14 md:h-16 flex items-center justify-between shadow-lg shadow-black/20">
+          {/* Left: History Button + App Brand */}
+          <div className="flex items-center gap-3 md:gap-4">
+            {/* History Toggle Pill */}
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="rounded-full bg-white/5 border border-white/10 px-4 py-1.5 text-xs font-medium text-white hover:bg-white/10 transition-colors flex items-center gap-2 cursor-pointer shadow-xs"
+              title="Open History"
+            >
+              <span className="h-2 w-2 rounded-full bg-[#2727E6] animate-pulse" />
+              <span className="font-semibold">History</span>
+              {sessions.length > 0 && (
+                <span className="rounded-full px-1.5 py-0.2 text-[10px] font-bold bg-[#2727E6]/30 text-white border border-[#2727E6]/40">
+                  {sessions.length}
+                </span>
+              )}
+            </button>
+
+            {/* App Brand Avatar & Title */}
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-xl bg-[#2727E6] text-white flex items-center justify-center font-bold text-xs shadow-md shadow-[#2727E6]/30 shrink-0">
+                H
+              </div>
+              <h1 className="font-sans font-bold tracking-tight text-sm md:text-base text-white">
+                Hinglish<span className="text-[#6875F5]">CS</span> Coach
+              </h1>
+              <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-white/5 text-zinc-400 border border-white/10 hidden md:inline">
+                Workbench
               </span>
-            )}
-          </button>
+            </div>
+          </div>
 
-          {/* App Title */}
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            <h1 className="font-mono font-bold tracking-tight text-sm text-zinc-100">
-              Hinglish<span className="text-emerald-400">CS</span> Coach
-            </h1>
-            <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-500 border border-zinc-800 hidden md:inline">
-              Workbench
+          {/* Right: Compact System Status Pills */}
+          <div className="flex items-center gap-2 font-mono text-xs">
+            <span className="rounded-full px-3 py-1 bg-white/5 border border-white/10 text-white flex items-center gap-1.5">
+              <span className="text-zinc-400 hidden sm:inline">STT:</span>
+              <span className="text-zinc-200">Prisma</span>
             </span>
-          </div>
-        </div>
-
-        {/* Compact System Status Pills */}
-        <div className="flex items-center gap-2 font-mono text-[11px] text-zinc-400">
-          <div className="flex items-center gap-1">
-            <span className="text-zinc-600 hidden sm:inline">EARS:</span>
-            <span className="text-zinc-300">Prisma</span>
-          </div>
-          <span className="text-zinc-700">•</span>
-          <div className="flex items-center gap-1">
-            <span className="text-zinc-600 hidden sm:inline">BRAIN:</span>
-            <span className="text-emerald-400 font-semibold">Gemini 3.8</span>
-          </div>
-          <span className="text-zinc-700">•</span>
-          <div className="flex items-center gap-1">
-            <span className="text-zinc-600 hidden sm:inline">MOUTH:</span>
-            <span className="text-purple-400 font-semibold">Avinash</span>
+            <span className="rounded-full px-3 py-1 bg-white/5 border border-white/10 text-white flex items-center gap-1.5">
+              <span className="text-zinc-400 hidden sm:inline">Brain:</span>
+              <span className="text-[#6875F5] font-semibold">Gemini 3.8</span>
+            </span>
+            <span className="rounded-full px-3 py-1 bg-white/5 border border-white/10 text-white flex items-center gap-1.5">
+              <span className="text-zinc-400 hidden sm:inline">Voice:</span>
+              <span className="text-[#2727E6] font-semibold">Avinash</span>
+            </span>
           </div>
         </div>
       </header>
 
-      {/* Main Split-Pane Workbench */}
-      <main className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
+      {/* 2. Main Split-Pane Workbench */}
+      <main className="flex-1 min-h-0 px-3 md:px-4 pb-3 md:pb-4 flex flex-col lg:flex-row gap-4 overflow-hidden max-w-[128rem] mx-auto w-full">
         {/* Left Pane — Candidate Studio (38% width on desktop, fixed non-scrolling) */}
-        <aside className="w-full lg:w-[38%] shrink-0 border-b lg:border-b-0 lg:border-r border-zinc-800/80 flex flex-col p-4 gap-3.5 bg-zinc-950 overflow-hidden">
-          {/* 1. Target DSA Topic Selector */}
+        <aside className="w-full lg:w-[38%] shrink-0 rounded-3xl bg-[#131422]/70 backdrop-blur-md border border-white/10 p-6 flex flex-col gap-5 overflow-hidden shadow-lg shadow-black/20">
+          {/* Target DSA Topic Selector */}
           <div className="shrink-0">
             <TopicSelector value={topic} onChange={setTopic} />
           </div>
 
-          {/* 2. Compact Push-to-Talk Stage */}
+          {/* Compact Push-to-Talk Stage */}
           <div className="shrink-0">
             <PTTButton
               recorderState={appPhase === 'coaching' ? 'idle' : appPhase}
@@ -358,34 +361,38 @@ export default function App() {
             />
           </div>
 
-          {/* 3. Candidate Transcript Card (Internally scrollable + WAV player in footer) */}
-          <section className="flex-1 min-h-0 flex flex-col bg-zinc-900/70 rounded-xl border border-zinc-800/80 overflow-hidden shadow-xs">
-            {/* Card Header */}
-            <div className="px-3.5 py-2.5 border-b border-zinc-800/80 flex items-center justify-between shrink-0 bg-zinc-900/50">
+          {/* Candidate Transcript Inset Card */}
+          <section className="flex-1 min-h-0 rounded-2xl bg-black/40 border border-white/10 p-4 flex flex-col gap-3 shadow-inner">
+            {/* Header */}
+            <div className="flex items-center justify-between shrink-0">
               <span className="text-[11px] font-mono tracking-wider uppercase font-semibold text-zinc-400">
                 CANDIDATE TRANSCRIPT
               </span>
-              <div className="flex items-center gap-1.5 font-mono text-[10px]">
+              <div className="flex items-center gap-1.5 font-mono text-xs">
                 {transcript && !transcript.startsWith('(No speech') && (
-                  <span className="text-emerald-400">✓ Transcribed</span>
+                  <span className="rounded-full px-2.5 py-0.5 bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 text-[10px]">
+                    ✓ Transcribed
+                  </span>
                 )}
                 {appPhase === 'processing' && (
-                  <span className="text-amber-400 animate-pulse">Transcribing...</span>
+                  <span className="rounded-full px-2.5 py-0.5 bg-amber-950/80 text-amber-300 border border-amber-800/60 text-[10px] animate-pulse">
+                    Transcribing...
+                  </span>
                 )}
               </div>
             </div>
 
-            {/* Card Body (Scrollable transcript text) */}
-            <div className="flex-1 min-h-[120px] overflow-y-auto p-3.5 font-mono text-xs leading-relaxed text-zinc-200 bg-zinc-950/80">
+            {/* Scrollable Transcript Text */}
+            <div className="flex-1 min-h-[110px] overflow-y-auto text-xs sm:text-sm font-sans leading-relaxed text-zinc-200">
               {transcript ? (
                 <p className="whitespace-pre-wrap">{transcript}</p>
               ) : appPhase === 'processing' ? (
-                <div className="flex items-center gap-2 text-amber-400/90 py-4">
+                <div className="flex items-center gap-2 text-amber-400 py-4">
                   <span className="inline-block animate-spin">⠋</span>
                   <span>Transcribing Hinglish audio via Gnani Prisma v3...</span>
                 </div>
               ) : (
-                <p className="text-zinc-600 italic">
+                <p className="text-zinc-500 italic">
                   Your spoken Hinglish or English explanation will be transcribed here in real-time...
                 </p>
               )}
@@ -393,29 +400,28 @@ export default function App() {
 
             {/* STT Error Banner */}
             {sttError && (
-              <div className="shrink-0 p-2.5 bg-rose-950/60 border-t border-rose-800/80 text-rose-300 font-mono text-[11px] flex items-start gap-1.5">
+              <div className="shrink-0 p-3 rounded-xl bg-rose-950/60 border border-rose-800/80 text-rose-300 font-mono text-xs flex items-start gap-2">
                 <span className="text-rose-400 font-bold">!</span>
                 <div className="flex-1 whitespace-pre-wrap">{sttError}</div>
               </div>
             )}
 
-            {/* Card Footer: Recorded WAV Mini-Player */}
+            {/* Recorded WAV Mini-Player */}
             {audioUrl && appPhase !== 'recording' && (
-              <div className="shrink-0 border-t border-zinc-800/80 bg-zinc-900/80 px-3 py-2 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <span className="hidden sm:inline">Candidate Audio</span>
-                  <span className="text-zinc-600">(16kHz)</span>
+              <div className="shrink-0 pt-2.5 border-t border-white/10 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-1.5 text-xs font-mono text-zinc-400">
+                  <span className="w-2 h-2 rounded-full bg-[#2727E6]" />
+                  <span>WAV Audio (16kHz)</span>
                 </div>
-                <audio controls src={audioUrl} className="h-6 w-44 max-w-full opacity-80" />
+                <audio controls src={audioUrl} className="h-7 w-48 max-w-full opacity-90 rounded-full" />
               </div>
             )}
           </section>
         </aside>
 
         {/* Right Pane — Interviewer Evaluation (62% width on desktop, independent scroll) */}
-        <section className="w-full lg:w-[62%] flex-1 min-h-0 overflow-y-auto p-4 lg:p-5 space-y-4 bg-zinc-950/50">
-          {/* 1. Sticky Top Header Banner: Unified Score + Audio Player + Verbal Summary */}
+        <section className="w-full lg:w-[62%] flex-1 min-h-0 overflow-y-auto space-y-4 pr-0.5">
+          {/* Sticky Top Header Banner: Unified Score + Audio Player + Verbal Summary */}
           <AudioPlayerWidget
             audioBlob={ttsAudioBlob}
             isLoading={isTtsLoading}
@@ -427,7 +433,7 @@ export default function App() {
             onReplay={handleSynthesizePastSession}
           />
 
-          {/* 2. Structured Scorecard Grid: Remaining Sections */}
+          {/* Structured Scorecard Grid: Remaining Sections */}
           <CoachFeedback
             feedbackText={coachFeedback}
             isStreaming={isCoachStreaming}

@@ -40,7 +40,8 @@ export function getRemainingSections(markdown) {
 
 /**
  * Structured Scorecard Grid for Interviewer Evaluation.
- * Renders remaining sections with custom SVG indicators and strict inline-code handling.
+ * Styled with modern edtech visual patterns (rounded-3xl card, rounded-2xl inner containers,
+ * royal blue accents, and strict inline code handling).
  */
 export function CoachFeedback({
   feedbackText = '',
@@ -51,21 +52,21 @@ export function CoachFeedback({
   const scorecardContent = getRemainingSections(feedbackText)
 
   return (
-    <div className="bg-zinc-900/70 rounded-xl border border-zinc-800/80 p-4 space-y-3">
+    <div className="rounded-3xl bg-[#131422]/70 backdrop-blur-md border border-white/10 p-6 space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <div className="flex items-center gap-2.5">
           <span className="text-[11px] font-mono tracking-wider uppercase font-semibold text-zinc-400">
             STRUCTURED SCORECARD
           </span>
           {isStreaming && (
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono bg-amber-950/80 text-amber-300 border border-amber-800/60 animate-pulse">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono bg-[#2727E6]/15 text-white border border-[#2727E6]/30 animate-pulse">
+              <span className="h-2 w-2 rounded-full bg-[#2727E6]" />
               Streaming analysis...
             </span>
           )}
           {!isStreaming && feedbackText && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950/80 text-emerald-300 border border-emerald-800/60">
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-mono bg-emerald-950/80 text-emerald-300 border border-emerald-800/60">
               ✓ Ready
             </span>
           )}
@@ -75,7 +76,7 @@ export function CoachFeedback({
           <button
             type="button"
             onClick={onRetry}
-            className="text-[11px] font-mono text-zinc-400 hover:text-emerald-400 flex items-center gap-1 transition-colors px-2 py-0.5 rounded hover:bg-zinc-800 border border-zinc-800"
+            className="rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs px-3.5 py-1 text-white font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
             title="Re-run evaluation on the current transcript"
           >
             <span>↻</span> Re-evaluate
@@ -85,7 +86,7 @@ export function CoachFeedback({
 
       {/* Error Callout */}
       {error && (
-        <div className="p-3 rounded-lg bg-rose-950/70 border border-rose-800 text-rose-300 font-mono text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="p-4 rounded-2xl bg-rose-950/70 border border-rose-800 text-rose-300 font-mono text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-start gap-2">
             <span className="text-rose-400 font-bold">✕</span>
             <span className="leading-relaxed">{error}</span>
@@ -94,7 +95,7 @@ export function CoachFeedback({
             <button
               type="button"
               onClick={onRetry}
-              className="self-start sm:self-center px-2.5 py-1 bg-rose-900/60 hover:bg-rose-800 text-rose-200 border border-rose-700 rounded text-xs font-mono font-medium transition-colors"
+              className="self-start sm:self-center px-3 py-1 bg-rose-900/60 hover:bg-rose-800 text-rose-200 border border-rose-700 rounded-full text-xs font-mono font-medium transition-colors cursor-pointer"
             >
               Retry
             </button>
@@ -102,8 +103,8 @@ export function CoachFeedback({
         </div>
       )}
 
-      {/* Markdown Content */}
-      <div className="min-h-40 rounded-lg bg-zinc-950/90 border border-zinc-800/80 p-4 font-sans text-sm leading-relaxed overflow-x-auto">
+      {/* Markdown Content Inset Box */}
+      <div className="min-h-40 rounded-2xl bg-black/40 border border-white/10 p-5 font-sans text-sm leading-relaxed overflow-x-auto">
         {scorecardContent ? (
           <div className="space-y-1">
             <ReactMarkdown
@@ -122,7 +123,7 @@ export function CoachFeedback({
 
                   let icon = (
                     <svg
-                      className="w-3.5 h-3.5 text-zinc-400 shrink-0"
+                      className="w-4 h-4 text-zinc-400 shrink-0"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -139,7 +140,7 @@ export function CoachFeedback({
                   if (/logic check/i.test(cleanTitle)) {
                     icon = (
                       <svg
-                        className="w-3.5 h-3.5 text-emerald-400 shrink-0"
+                        className="w-4 h-4 text-[#6875F5] shrink-0"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -155,7 +156,7 @@ export function CoachFeedback({
                   } else if (/edge cases/i.test(cleanTitle)) {
                     icon = (
                       <svg
-                        className="w-3.5 h-3.5 text-amber-400 shrink-0"
+                        className="w-4 h-4 text-amber-400 shrink-0"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -171,7 +172,7 @@ export function CoachFeedback({
                   } else if (/complexity/i.test(cleanTitle)) {
                     icon = (
                       <svg
-                        className="w-3.5 h-3.5 text-sky-400 shrink-0"
+                        className="w-4 h-4 text-sky-400 shrink-0"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -187,7 +188,7 @@ export function CoachFeedback({
                   } else if (/ideal/i.test(cleanTitle)) {
                     icon = (
                       <svg
-                        className="w-3.5 h-3.5 text-purple-400 shrink-0"
+                        className="w-4 h-4 text-[#2727E6] shrink-0"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -203,29 +204,29 @@ export function CoachFeedback({
                   }
 
                   return (
-                    <h3 className="font-mono text-xs font-semibold text-zinc-300 uppercase tracking-wider mt-5 mb-2.5 pb-1.5 border-b border-zinc-800/80 first:mt-1 flex items-center gap-2">
+                    <h3 className="font-mono text-xs font-semibold text-zinc-200 uppercase tracking-wider mt-6 mb-3 pb-2 border-b border-white/10 first:mt-1 flex items-center gap-2.5">
                       {icon}
                       <span>{cleanTitle}</span>
                     </h3>
                   )
                 },
                 h4: ({ children }) => (
-                  <h4 className="font-mono text-xs font-semibold text-zinc-400 mt-3 mb-1">
+                  <h4 className="font-mono text-xs font-semibold text-zinc-300 mt-3 mb-1">
                     {children}
                   </h4>
                 ),
                 p: ({ children }) => (
-                  <p className="text-sm text-zinc-300 leading-relaxed my-2">
+                  <p className="text-sm text-zinc-200 leading-relaxed my-2.5">
                     {children}
                   </p>
                 ),
                 ul: ({ children }) => (
-                  <ul className="space-y-1.5 my-2 pl-4 list-disc text-sm text-zinc-300 marker:text-zinc-600">
+                  <ul className="space-y-2 my-2.5 pl-4 list-disc text-sm text-zinc-300 marker:text-[#6875F5]">
                     {children}
                   </ul>
                 ),
                 li: ({ children }) => (
-                  <li className="text-sm text-zinc-300 leading-relaxed">
+                  <li className="text-sm text-zinc-200 leading-relaxed">
                     {children}
                   </li>
                 ),
@@ -234,7 +235,7 @@ export function CoachFeedback({
                   if (isInline) {
                     return (
                       <code
-                        className="inline px-1.5 py-0.5 rounded bg-zinc-800/90 text-emerald-300 font-mono text-[12.5px] border border-zinc-700/60 align-baseline mx-0.5"
+                        className="inline px-1.5 py-0.5 rounded bg-zinc-800 text-emerald-300 font-mono text-[12.5px] border border-zinc-700/60 align-baseline mx-0.5"
                         {...props}
                       >
                         {children}
@@ -243,7 +244,7 @@ export function CoachFeedback({
                   }
                   return (
                     <code
-                      className="block w-full bg-zinc-950 p-3.5 rounded-lg font-mono text-xs text-emerald-300 border border-zinc-800/80 overflow-x-auto my-2.5"
+                      className="block w-full bg-[#0D0E1A] p-4 rounded-xl font-mono text-xs text-emerald-300 border border-white/10 overflow-x-auto my-3"
                       {...props}
                     >
                       {children}
@@ -252,12 +253,12 @@ export function CoachFeedback({
                 },
                 pre: ({ children }) => <div className="my-2">{children}</div>,
                 strong: ({ children }) => (
-                  <strong className="font-semibold text-zinc-100">
+                  <strong className="font-semibold text-white">
                     {children}
                   </strong>
                 ),
                 blockquote: ({ children }) => (
-                  <blockquote className="border-l-2 border-emerald-500/60 pl-3 my-2 text-zinc-400 italic font-mono text-xs">
+                  <blockquote className="border-l-2 border-[#2727E6] pl-3.5 my-3 text-zinc-300 italic font-mono text-xs bg-white/5 py-1.5 rounded-r">
                     {children}
                   </blockquote>
                 ),
@@ -268,13 +269,13 @@ export function CoachFeedback({
 
             {/* Live Typing Cursor */}
             {isStreaming && (
-              <span className="inline-block w-2 h-3.5 ml-1 bg-emerald-400 animate-pulse align-middle" />
+              <span className="inline-block w-2 h-3.5 ml-1 bg-[#6875F5] animate-pulse align-middle" />
             )}
           </div>
         ) : isStreaming ? (
-          <div className="h-36 flex flex-col items-center justify-center text-center gap-2 text-amber-400/90 font-mono text-xs">
+          <div className="h-36 flex flex-col items-center justify-center text-center gap-2.5 text-zinc-300 font-mono text-xs">
             <div className="flex items-center gap-2">
-              <span className="animate-spin text-sm">⠋</span>
+              <span className="animate-spin text-sm text-[#6875F5]">⠋</span>
               <span>Gemini is evaluating your technical logic...</span>
             </div>
             <span className="text-zinc-500 text-[11px]">
@@ -282,10 +283,10 @@ export function CoachFeedback({
             </span>
           </div>
         ) : (
-          <div className="h-36 flex flex-col items-center justify-center text-center gap-1.5 text-zinc-500 font-mono text-xs">
+          <div className="h-36 flex flex-col items-center justify-center text-center gap-2 text-zinc-500 font-mono text-xs">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-7 w-7 text-zinc-700 mb-1"
+              className="h-8 w-8 text-zinc-600 mb-1"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"

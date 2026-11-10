@@ -9,6 +9,16 @@ export default {
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       colors: {
+        brand: {
+          DEFAULT: '#2727E6',
+          hover: '#1F1FB8',
+          tint: 'rgba(39, 39, 230, 0.12)',
+          border: 'rgba(39, 39, 230, 0.3)',
+        },
+        surface: {
+          canvas: '#0D0E1A',
+          panel: '#131422',
+        },
         zinc: {
           950: '#09090b',
           900: '#121215',

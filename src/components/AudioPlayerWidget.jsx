@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 
 /**
- * Unified Sticky Header Banner for the Interviewer Evaluation pane:
- * Combines:
- * 1. Interviewer status + Coach Avinash voice indicator
- * 2. Semantic Numeric Score Badge
- * 3. Verbal Summary quote
- * 4. Spoken audio playback widget with equalizer
+ * Modern Edtech Evaluation Banner for Coach Avinash:
+ * - Profile avatar with subtitle "FAANG DSA Interview Mentor"
+ * - Numeric score pill badge
+ * - Verbal Summary quote in a soft inset card
+ * - Audio player controls with #2727E6 accents and rounded-full controls
  */
 export function AudioPlayerWidget({
   audioBlob = null,
@@ -104,18 +103,8 @@ export function AudioPlayerWidget({
 
   const getScoreBadge = () => {
     if (score !== null && score !== undefined) {
-      const isHigh = score >= 7
-      const isMed = score >= 4 && score < 7
-      const colorClass = isHigh
-        ? 'bg-emerald-950/90 text-emerald-300 border-emerald-800/80'
-        : isMed
-        ? 'bg-amber-950/90 text-amber-300 border-amber-800/80'
-        : 'bg-rose-950/90 text-rose-300 border-rose-800/80'
-
       return (
-        <span
-          className={`px-2.5 py-1 rounded text-xs font-mono font-bold tracking-wider border shadow-sm ${colorClass}`}
-        >
+        <span className="rounded-full bg-[#2727E6]/15 border border-[#2727E6]/30 text-white font-bold text-sm px-4 py-1.5 shadow-xs font-mono">
           SCORE: {score} / 10
         </span>
       )
@@ -123,107 +112,104 @@ export function AudioPlayerWidget({
 
     if (isStreaming) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono bg-zinc-800 text-amber-300 border border-zinc-700 animate-pulse">
-          <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+        <span className="rounded-full bg-[#2727E6]/15 border border-[#2727E6]/30 text-white font-bold text-sm px-4 py-1.5 shadow-xs font-mono inline-flex items-center gap-1.5 animate-pulse">
+          <span className="h-2 w-2 rounded-full bg-[#2727E6]" />
           EVALUATING...
         </span>
       )
     }
 
     return (
-      <span className="px-2.5 py-1 rounded text-xs font-mono text-zinc-500 border border-zinc-800 bg-zinc-950">
+      <span className="rounded-full bg-white/5 border border-white/10 text-zinc-400 font-bold text-sm px-4 py-1.5 font-mono">
         SCORE: -- / 10
       </span>
     )
   }
 
   return (
-    <div className="sticky top-0 z-20 bg-zinc-900/95 backdrop-blur-md border border-zinc-800/90 rounded-xl p-4 shadow-lg space-y-3">
-      {/* Header Row: Label & Score Pill */}
-      <div className="flex items-center justify-between gap-2 border-b border-zinc-800/70 pb-2.5">
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono tracking-wider text-zinc-400 uppercase font-semibold">
-            INTERVIEWER EVALUATION
-          </span>
-          <span className="text-zinc-600">•</span>
-          <div className="flex items-center gap-1.5 font-mono text-[11px] text-zinc-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            <span>Coach Avinash</span>
-            <span className="text-zinc-500 text-[10px] hidden sm:inline">(Timbre v3)</span>
+    <div className="sticky top-0 z-20 rounded-3xl bg-[#131422]/90 backdrop-blur-md border border-white/10 p-6 flex flex-col gap-4 shadow-lg shadow-black/20">
+      {/* Profile Header Row */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-[#2727E6] flex items-center justify-center text-white font-bold text-sm shadow-md shadow-[#2727E6]/30 shrink-0">
+            CA
           </div>
-
-          {/* Equalizer animation when playing */}
-          {isPlaying && (
-            <div className="flex items-end gap-0.5 h-3 px-1">
-              <span className="w-0.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.3s] h-2.5" />
-              <span className="w-0.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.15s] h-1.5" />
-              <span className="w-0.5 bg-emerald-400 rounded-full animate-bounce h-3" />
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-white text-sm">Coach Avinash</h3>
+              <span className="rounded-full px-2 py-0.5 bg-[#2727E6]/15 border border-[#2727E6]/30 text-[#6875F5] text-[10px] font-mono">
+                Timbre v3
+              </span>
+              {isPlaying && (
+                <div className="flex items-end gap-0.5 h-3 px-1">
+                  <span className="w-0.5 bg-[#2727E6] rounded-full animate-bounce [animation-delay:-0.3s] h-2.5" />
+                  <span className="w-0.5 bg-[#2727E6] rounded-full animate-bounce [animation-delay:-0.15s] h-1.5" />
+                  <span className="w-0.5 bg-[#2727E6] rounded-full animate-bounce h-3" />
+                </div>
+              )}
             </div>
-          )}
+            <span className="text-zinc-400 text-xs">FAANG DSA Interview Mentor</span>
+          </div>
         </div>
 
         <div>{getScoreBadge()}</div>
       </div>
 
-      {/* Verbal Summary Quote */}
+      {/* Verbal Summary Quote Inset Card */}
       {verbalSummary ? (
-        <div className="border-l-2 border-emerald-500/80 bg-zinc-950/70 p-2.5 rounded-r border-t border-r border-b border-zinc-800/40">
-          <p className="text-xs sm:text-[13px] text-zinc-200 font-sans italic leading-relaxed">
-            &ldquo;{verbalSummary}&rdquo;
-          </p>
+        <div className="rounded-2xl bg-white/5 border border-white/10 p-4 text-zinc-200 text-sm leading-relaxed italic border-l-4 border-l-[#2727E6]">
+          &ldquo;{verbalSummary}&rdquo;
         </div>
       ) : isStreaming ? (
-        <div className="bg-zinc-950/60 p-2.5 rounded border border-zinc-800/40">
-          <p className="text-xs text-zinc-400 font-mono flex items-center gap-2">
-            <span className="animate-spin text-amber-400">⠋</span>
-            <span>Gemini is generating interviewer analysis...</span>
-          </p>
+        <div className="rounded-2xl bg-white/5 border border-white/10 p-4 text-zinc-400 text-xs font-mono flex items-center gap-2.5">
+          <span className="animate-spin text-[#6875F5]">⠋</span>
+          <span>Gemini is generating interviewer analysis...</span>
         </div>
       ) : (
-        <div className="bg-zinc-950/40 p-2.5 rounded border border-zinc-800/40 text-xs text-zinc-500 font-mono">
+        <div className="rounded-2xl bg-white/5 border border-white/10 p-4 text-zinc-500 text-xs font-mono">
           Awaiting candidate explanation. Spoken coaching verdict and score will appear here.
         </div>
       )}
 
-      {/* Spoken Voice Audio Controls */}
+      {/* Audio Controls & Progress Bar */}
       {isLoading ? (
-        <div className="flex items-center justify-between p-2 rounded bg-zinc-950/80 border border-emerald-900/40 text-xs font-mono text-emerald-400">
+        <div className="rounded-2xl bg-[#2727E6]/10 border border-[#2727E6]/20 p-3 flex items-center justify-between text-xs font-mono text-[#6875F5]">
           <div className="flex items-center gap-2">
             <span className="animate-spin text-sm">⠋</span>
-            <span>Synthesizing spoken feedback...</span>
+            <span>Synthesizing Coach Avinash voice verdict...</span>
           </div>
-          <span className="text-zinc-500 text-[10px]">Gnani Timbre v3</span>
+          <span className="text-zinc-500 text-[11px]">Gnani Timbre v3</span>
         </div>
       ) : error ? (
-        <div className="flex items-center gap-2 p-2 rounded bg-rose-950/40 border border-rose-900/60 text-xs font-mono text-rose-300">
+        <div className="rounded-2xl bg-rose-950/40 border border-rose-900/60 p-3 flex items-center gap-2 text-xs font-mono text-rose-300">
           <span className="text-rose-400 font-bold">!</span>
           <span>Voice synthesis error: {error}</span>
         </div>
       ) : audioBlob ? (
-        <div className="flex items-center gap-2.5 pt-0.5">
-          {/* Play/Pause Button */}
+        <div className="flex items-center gap-3 pt-1">
+          {/* Rounded-full Play/Pause Button */}
           <button
             type="button"
             onClick={togglePlay}
-            className="h-7 w-7 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 flex items-center justify-center transition-colors focus:outline-none shrink-0"
+            className="h-9 w-9 rounded-full bg-[#2727E6] hover:bg-[#1F1FB8] text-white flex items-center justify-center shadow-md shadow-[#2727E6]/30 transition-all shrink-0 cursor-pointer focus:outline-none"
             aria-label={isPlaying ? 'Pause' : 'Play'}
           >
             {isPlaying ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
               </svg>
             ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
               </svg>
             )}
           </button>
 
-          {/* Replay */}
+          {/* Rounded-full Replay */}
           <button
             type="button"
             onClick={handleRestart}
-            className="h-7 w-7 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-emerald-400 border border-zinc-700 flex items-center justify-center transition-colors text-xs font-mono shrink-0"
+            className="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 text-white border border-white/10 flex items-center justify-center transition-colors text-xs font-mono shrink-0 cursor-pointer"
             title="Replay audio"
             aria-label="Replay audio"
           >
@@ -231,14 +217,14 @@ export function AudioPlayerWidget({
           </button>
 
           {/* Progress Bar & Time */}
-          <div className="flex-1 flex items-center gap-2 font-mono text-[10px] text-zinc-400">
-            <div className="flex-1 bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+          <div className="flex-1 flex items-center gap-2.5 font-mono text-xs text-zinc-400">
+            <div className="flex-1 bg-white/10 h-1.5 rounded-full overflow-hidden">
               <div
-                className="bg-emerald-500 h-full transition-all duration-100 rounded-full"
+                className="bg-[#2727E6] h-full transition-all duration-100 rounded-full"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <span className="whitespace-nowrap tabular-nums">
+            <span className="whitespace-nowrap tabular-nums text-[11px]">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
           </div>
@@ -248,7 +234,7 @@ export function AudioPlayerWidget({
           <button
             type="button"
             onClick={onReplay}
-            className="text-[11px] font-mono text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-950/40 border border-emerald-800/50 hover:bg-emerald-950/70 transition-colors"
+            className="rounded-full px-4 py-1.5 bg-[#2727E6] hover:bg-[#1F1FB8] text-white text-xs font-medium shadow-md shadow-[#2727E6]/30 transition-all cursor-pointer flex items-center gap-1.5"
           >
             <span>🔊</span> Listen to Coach Verdict
           </button>
