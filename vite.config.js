@@ -66,30 +66,64 @@ export default defineConfig(({ mode }) => {
               }
 
               const ai = new GoogleGenAI({ apiKey })
-              const response = await ai.models.generateContentStream({
-                model: 'gemini-3.8-flash',
-                config: {
-                  systemInstruction: SYSTEM_INSTRUCTION,
-                  temperature: 0.4,
-                  thinkingConfig: {
-                    thinkingBudget: 0,
-                  },
-                },
-                contents: [formatUserPrompt(topic, transcript)],
-              })
+              const FALLBACK_MODELS = ['gemini-3.8-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
+              let streamSuccess = false
+              let lastError = null
 
-              const stream = response.stream || response
-              for await (const chunk of stream) {
+              for (const model of FALLBACK_MODELS) {
                 if (isAborted) break
-                const chunkText = chunk.text || ''
-                if (chunkText) {
-                  console.log('Gemini stream chunk:', chunkText)
-                  res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`)
+                let hasWrittenToClient = false
+                try {
+                  console.log(`[Gemini Stream] Attempting model: ${model}`)
+                  const response = await ai.models.generateContentStream({
+                    model,
+                    config: {
+                      systemInstruction: SYSTEM_INSTRUCTION,
+                      temperature: 0.4,
+                      ...(model !== 'gemini-1.5-flash' && {
+                        thinkingConfig: {
+                          thinkingBudget: 0,
+                        },
+                      }),
+                    },
+                    contents: [formatUserPrompt(topic, transcript)],
+                  })
+
+                  const stream = response.stream || response
+                  for await (const chunk of stream) {
+                    if (isAborted) break
+                    const chunkText = chunk.text || ''
+                    if (chunkText) {
+                      hasWrittenToClient = true
+                      console.log(`Gemini stream chunk (${model}):`, chunkText)
+                      res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`)
+                    }
+                  }
+
+                  if (!isAborted) {
+                    res.write('event: done\ndata: {}\n\n')
+                    res.end()
+                    streamSuccess = true
+                    break
+                  }
+                } catch (err) {
+                  console.warn(`[Gemini Stream] Model ${model} failed:`, err.message || err)
+                  lastError = err
+                  if (isAborted || hasWrittenToClient) {
+                    // Don't fallback mid-stream if chunks were already sent to client
+                    break
+                  }
+                  console.log('[Gemini Stream] Falling back to next model...')
                 }
               }
 
-              if (!isAborted) {
-                res.write('event: done\ndata: {}\n\n')
+              if (!streamSuccess && !isAborted) {
+                console.error('[Gemini Stream] All fallback models failed. Last error:', lastError)
+                res.write(
+                  `event: error\ndata: ${JSON.stringify({
+                    message: lastError?.message || 'All Gemini models failed to respond. Please try again.',
+                  })}\n\n`,
+                )
                 res.end()
               }
             } catch (err) {
