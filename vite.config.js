@@ -66,7 +66,7 @@ export default defineConfig(({ mode }) => {
               }
 
               const ai = new GoogleGenAI({ apiKey })
-              const FALLBACK_MODELS = ['gemini-2.0-flash', 'gemini-2.5-flash']
+              const FALLBACK_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.6-flash', 'gemini-3.8-flash']
               let streamSuccess = false
               let lastError = null
 
