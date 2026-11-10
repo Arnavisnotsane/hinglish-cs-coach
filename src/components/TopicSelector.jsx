@@ -48,25 +48,33 @@ export function TopicSelector({ value, onChange }) {
   }
 
   return (
-    <div className="flex flex-col gap-2 w-full">
-      <label className="text-xs text-gray-400 font-mono uppercase tracking-widest flex items-center justify-between">
-        <span>Target DSA Topic</span>
-        {value && <span className="text-green-500 lowercase text-[11px]">selected: {value}</span>}
-      </label>
+    <div className="flex flex-col gap-1.5 w-full bg-zinc-900/70 border border-zinc-800/80 rounded-lg p-3">
+      <div className="flex items-center justify-between text-[11px] font-mono tracking-wider text-zinc-400">
+        <span className="uppercase font-semibold">TARGET DSA TOPIC</span>
+        {value ? (
+          <span className="text-emerald-400 text-[10px] font-mono truncate max-w-[160px]">
+            ● {value}
+          </span>
+        ) : (
+          <span className="text-zinc-500 text-[10px]">Select to start</span>
+        )}
+      </div>
+
       <select
         value={selectedOption}
         onChange={handleSelectChange}
-        className="bg-gray-800 text-green-400 font-mono text-sm border border-gray-700 hover:border-gray-600 rounded-md px-3 py-2.5 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 w-full transition-colors"
+        className="w-full bg-zinc-950 text-zinc-200 font-mono text-xs border border-zinc-800 hover:border-zinc-700 rounded px-2.5 py-2 focus:outline-none focus:border-zinc-600 focus:ring-1 focus:ring-zinc-600 transition-colors"
       >
-        <option value="" disabled>
-          -- Select a DSA topic to explain --
+        <option value="" disabled className="text-zinc-500">
+          -- Select DSA topic to explain --
         </option>
         {TOPICS.map((t) => (
-          <option key={t} value={t} className="bg-gray-900 text-gray-200">
+          <option key={t} value={t} className="bg-zinc-900 text-zinc-200">
             {t}
           </option>
         ))}
       </select>
+
       {isOther && (
         <input
           type="text"
@@ -74,7 +82,7 @@ export function TopicSelector({ value, onChange }) {
           value={customTopic}
           onChange={handleCustomChange}
           autoFocus
-          className="bg-gray-800 text-green-400 font-mono text-sm border border-green-600/50 rounded-md px-3 py-2.5 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 w-full transition-colors placeholder:text-gray-500"
+          className="w-full bg-zinc-950 text-emerald-300 font-mono text-xs border border-zinc-700/80 rounded px-2.5 py-2 focus:outline-none focus:border-emerald-500/80 focus:ring-1 focus:ring-emerald-500/80 transition-colors placeholder:text-zinc-600 mt-1"
         />
       )}
     </div>

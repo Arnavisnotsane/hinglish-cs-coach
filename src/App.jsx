@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { TopicSelector } from './components/TopicSelector'
 import { PTTButton } from './components/PTTButton'
 import { HistorySidebar } from './components/HistorySidebar'
@@ -18,22 +18,27 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [audioUrl, setAudioUrl] = useState(null)
 
-  // Coach Feedback state (Phase 2)
+  // Coach Feedback state
   const [coachFeedback, setCoachFeedback] = useState('')
   const [isCoachStreaming, setIsCoachStreaming] = useState(false)
   const [coachError, setCoachError] = useState(null)
 
-  // TTS & Voice feedback state (Phase 3)
+  // TTS & Spoken Voice feedback state
   const [verbalSummaryText, setVerbalSummaryText] = useState('')
   const [ttsAudioBlob, setTtsAudioBlob] = useState(null)
   const [isTtsLoading, setIsTtsLoading] = useState(false)
   const [ttsError, setTtsError] = useState(null)
 
-  // Session History state (Phase 3)
+  // Session History state
   const [sessions, setSessions] = useState(() => getStoredSessions())
 
   const recorder = useRecorder()
   const abortControllerRef = useRef(null)
+
+  // Compute live score from feedback text if available
+  const currentScore = useMemo(() => {
+    return extractScore(coachFeedback)
+  }, [coachFeedback])
 
   // Cancel any active streaming evaluation
   const abortCurrentEvaluation = useCallback(() => {
@@ -59,7 +64,7 @@ export default function App() {
     }
   }, [recorder.state, recorder.error, abortCurrentEvaluation])
 
-  // Trigger Gemini streaming evaluation + automatic Gnani TTS voice synthesis
+  // Trigger Gemini streaming evaluation + automatic parallel Gnani TTS voice synthesis
   const runCoachingEvaluation = useCallback(
     (targetTopic, targetTranscript) => {
       if (!targetTopic || !targetTranscript || targetTranscript.startsWith('(No speech')) {
@@ -93,9 +98,9 @@ export default function App() {
           // is complete. Immediately trigger Gnani TTS speech synthesis in parallel!
           if (
             !ttsTriggered &&
-            (accumulatedFeedback.includes('### 📊 Score') ||
-              accumulatedFeedback.includes('Score:') ||
-              accumulatedFeedback.includes('### Score'))
+            (accumulatedFeedback.includes('### Score') ||
+              accumulatedFeedback.includes('### 📊 Score') ||
+              accumulatedFeedback.includes('Score:'))
           ) {
             const earlySummary = extractVerbalSummary(accumulatedFeedback)
             if (earlySummary) {
@@ -129,7 +134,6 @@ export default function App() {
           setAppPhase('done')
           abortControllerRef.current = null
 
-          // Extract verbal summary & numeric score
           const summary = extractVerbalSummary(accumulatedFeedback)
           const score = extractScore(accumulatedFeedback)
           if (summary) setVerbalSummaryText(summary)
@@ -282,191 +286,155 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col font-sans selection:bg-green-500/30 selection:text-green-300">
-      {/* Top Navbar */}
-      <header className="border-b border-gray-800 bg-gray-900/60 backdrop-blur sticky top-0 z-30 px-4 py-3">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setSidebarOpen(true)}
-              className="p-2 rounded-md bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-green-400 font-mono text-sm border border-gray-700 flex items-center gap-2 transition-colors relative"
-              title="Open History"
-            >
-              <span>☰</span>
-              <span className="hidden sm:inline text-xs font-semibold">History</span>
-              {sessions.length > 0 && (
-                <span className="inline-flex items-center justify-center px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-green-500/20 text-green-400 border border-green-500/30">
-                  {sessions.length}
-                </span>
-              )}
-            </button>
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse" />
-              <h1 className="font-mono font-bold tracking-tight text-sm sm:text-base text-gray-100">
-                Hinglish<span className="text-green-400">CS</span> Coach
-              </h1>
-              <span className="hidden md:inline text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">
-                Phase 3 Full Stack
+    <div className="lg:h-screen lg:overflow-hidden flex flex-col bg-zinc-950 text-zinc-100 font-sans selection:bg-emerald-500/30 selection:text-emerald-300">
+      {/* Top Header: 48px Compact Bar */}
+      <header className="h-12 border-b border-zinc-800/80 bg-zinc-950/90 backdrop-blur shrink-0 px-4 flex items-center justify-between z-30">
+        <div className="flex items-center gap-3">
+          {/* History Drawer Trigger */}
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            className="px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-emerald-400 font-mono text-xs border border-zinc-800 flex items-center gap-1.5 transition-colors"
+            title="Open History"
+          >
+            <span>☰</span>
+            <span className="hidden sm:inline font-semibold">History</span>
+            {sessions.length > 0 && (
+              <span className="inline-flex items-center justify-center px-1 py-0.2 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                {sessions.length}
               </span>
-            </div>
-          </div>
+            )}
+          </button>
 
-          <div className="flex items-center gap-2.5 font-mono text-xs text-gray-400">
-            <div className="flex items-center gap-1">
-              <span className="text-gray-500 hidden sm:inline">Ears:</span>
-              <span className="text-gray-300">Prisma</span>
-            </div>
-            <span className="text-gray-700">•</span>
-            <div className="flex items-center gap-1">
-              <span className="text-gray-500 hidden sm:inline">Brain:</span>
-              <span className="text-green-400 font-semibold">Gemini 3.8</span>
-            </div>
-            <span className="text-gray-700">•</span>
-            <div className="flex items-center gap-1">
-              <span className="text-gray-500 hidden sm:inline">Mouth:</span>
-              <span className="text-purple-400 font-semibold">Avinash</span>
-            </div>
+          {/* App Title */}
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            <h1 className="font-mono font-bold tracking-tight text-sm text-zinc-100">
+              Hinglish<span className="text-emerald-400">CS</span> Coach
+            </h1>
+            <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-500 border border-zinc-800 hidden md:inline">
+              Workbench
+            </span>
+          </div>
+        </div>
+
+        {/* Compact System Status Pills */}
+        <div className="flex items-center gap-2 font-mono text-[11px] text-zinc-400">
+          <div className="flex items-center gap-1">
+            <span className="text-zinc-600 hidden sm:inline">EARS:</span>
+            <span className="text-zinc-300">Prisma</span>
+          </div>
+          <span className="text-zinc-700">•</span>
+          <div className="flex items-center gap-1">
+            <span className="text-zinc-600 hidden sm:inline">BRAIN:</span>
+            <span className="text-emerald-400 font-semibold">Gemini 3.8</span>
+          </div>
+          <span className="text-zinc-700">•</span>
+          <div className="flex items-center gap-1">
+            <span className="text-zinc-600 hidden sm:inline">MOUTH:</span>
+            <span className="text-purple-400 font-semibold">Avinash</span>
           </div>
         </div>
       </header>
 
-      {/* Main Body */}
-      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-6 sm:py-8 flex flex-col gap-6">
-        {/* Terminal Card 1: Setup */}
-        <section className="bg-gray-900/80 rounded-xl border border-gray-800 p-5 shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-gray-800/80 pb-3">
-            <div className="flex items-center gap-2">
-              <div className="flex gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-                <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
-                <span className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
-              </div>
-              <span className="text-xs font-mono text-gray-400 ml-2">session://setup</span>
-            </div>
-            <span className="text-[11px] font-mono text-gray-500">
-              Hinglish codemix • indic-auto
-            </span>
+      {/* Main Split-Pane Workbench */}
+      <main className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
+        {/* Left Pane — Candidate Studio (38% width on desktop, fixed non-scrolling) */}
+        <aside className="w-full lg:w-[38%] shrink-0 border-b lg:border-b-0 lg:border-r border-zinc-800/80 flex flex-col p-4 gap-3.5 bg-zinc-950 overflow-hidden">
+          {/* 1. Target DSA Topic Selector */}
+          <div className="shrink-0">
+            <TopicSelector value={topic} onChange={setTopic} />
           </div>
 
-          <TopicSelector value={topic} onChange={setTopic} />
-        </section>
-
-        {/* Terminal Card 2: Audio Interaction */}
-        <section className="bg-gray-900/80 rounded-xl border border-gray-800 p-6 sm:p-8 shadow-xl flex flex-col items-center justify-center gap-4 relative overflow-hidden">
-          <div className="w-full flex items-center justify-between border-b border-gray-800/80 pb-3 mb-2">
-            <span className="text-xs font-mono text-gray-400">audio://input-stream</span>
-            <span
-              className={`text-xs font-mono px-2 py-0.5 rounded ${
-                appPhase === 'recording'
-                  ? 'bg-red-950 text-red-400 border border-red-800/80 animate-pulse'
-                  : appPhase === 'processing'
-                  ? 'bg-yellow-950 text-yellow-400 border border-yellow-800/80'
-                  : appPhase === 'coaching'
-                  ? 'bg-purple-950 text-purple-400 border border-purple-800/80'
-                  : appPhase === 'done'
-                  ? 'bg-green-950 text-green-400 border border-green-800/80'
-                  : 'bg-gray-800 text-gray-400'
-              }`}
-            >
-              status: {appPhase}
-            </span>
-          </div>
-
-          {/* Large PTT Button */}
-          <PTTButton
-            recorderState={appPhase === 'coaching' ? 'idle' : appPhase}
-            secondsRecorded={recorder.secondsRecorded}
-            maxSeconds={recorder.maxSeconds}
-            onStart={handleStartRecording}
-            onStop={handleStopRecording}
-            disabled={!topic || topic.trim() === ''}
-          />
-
-          {!topic && (
-            <p className="text-xs font-mono text-gray-500 text-center">
-              ▲ Select a topic above to enable the microphone
-            </p>
-          )}
-
-          {/* Audio Preview if available */}
-          {audioUrl && appPhase !== 'recording' && (
-            <div className="w-full pt-2 flex flex-col items-center">
-              <span className="text-[11px] font-mono text-gray-500 mb-1">
-                Your Spoken Recording (16kHz mono WAV)
-              </span>
-              <audio controls src={audioUrl} className="h-8 w-full max-w-md opacity-80" />
-            </div>
-          )}
-
-          {/* STT Error Banner */}
-          {sttError && (
-            <div className="w-full mt-2 p-3 rounded-lg bg-red-950/60 border border-red-800/80 text-red-300 font-mono text-xs flex items-start gap-2">
-              <span className="text-red-400 font-bold">!</span>
-              <div className="flex-1 whitespace-pre-wrap">{sttError}</div>
-            </div>
-          )}
-        </section>
-
-        {/* Terminal Card 3: Transcript Output */}
-        <section className="bg-gray-900/80 rounded-xl border border-gray-800 p-5 shadow-xl space-y-3">
-          <div className="flex items-center justify-between border-b border-gray-800/80 pb-3">
-            <span className="text-xs font-mono text-gray-400">stt://transcript-output</span>
-            {transcript && !transcript.startsWith('(No speech') && (
-              <span className="text-[11px] font-mono text-green-400">
-                ✓ Transcribed successfully
-              </span>
-            )}
-          </div>
-
-          <div className="min-h-24 max-h-60 overflow-y-auto p-3.5 rounded-lg bg-gray-950/90 border border-gray-800 font-mono text-sm leading-relaxed">
-            {transcript ? (
-              <p className="text-gray-100 whitespace-pre-wrap">{transcript}</p>
-            ) : appPhase === 'processing' ? (
-              <div className="flex items-center gap-2 text-yellow-400/90">
-                <span className="inline-block animate-spin">⠋</span>
-                <span>Transcribing Hinglish audio via Gnani Prisma v3...</span>
-              </div>
-            ) : (
-              <p className="text-gray-600 italic">
-                Your transcribed speech will appear here after you speak in Hinglish...
-              </p>
-            )}
-          </div>
-        </section>
-
-        {/* Terminal Card 4: Audio Voice Coach (Phase 3 Mouth) */}
-        {(ttsAudioBlob || isTtsLoading || ttsError || verbalSummaryText) && (
-          <section className="space-y-2">
-            <AudioPlayerWidget
-              audioBlob={ttsAudioBlob}
-              isLoading={isTtsLoading}
-              error={ttsError}
-              verbalSummary={verbalSummaryText}
-              autoPlay={true}
-              onReplay={handleSynthesizePastSession}
+          {/* 2. Compact Push-to-Talk Stage */}
+          <div className="shrink-0">
+            <PTTButton
+              recorderState={appPhase === 'coaching' ? 'idle' : appPhase}
+              secondsRecorded={recorder.secondsRecorded}
+              maxSeconds={recorder.maxSeconds}
+              onStart={handleStartRecording}
+              onStop={handleStopRecording}
+              disabled={!topic || topic.trim() === ''}
             />
-            {verbalSummaryText && !ttsAudioBlob && !isTtsLoading && (
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={handleSynthesizePastSession}
-                  className="text-xs font-mono text-green-400 hover:text-green-300 flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-green-950/40 border border-green-800/50 hover:bg-green-950/70 transition-colors"
-                >
-                  <span>🔊</span> Listen to Coach Verdict
-                </button>
+          </div>
+
+          {/* 3. Candidate Transcript Card (Internally scrollable + WAV player in footer) */}
+          <section className="flex-1 min-h-0 flex flex-col bg-zinc-900/70 rounded-xl border border-zinc-800/80 overflow-hidden shadow-xs">
+            {/* Card Header */}
+            <div className="px-3.5 py-2.5 border-b border-zinc-800/80 flex items-center justify-between shrink-0 bg-zinc-900/50">
+              <span className="text-[11px] font-mono tracking-wider uppercase font-semibold text-zinc-400">
+                CANDIDATE TRANSCRIPT
+              </span>
+              <div className="flex items-center gap-1.5 font-mono text-[10px]">
+                {transcript && !transcript.startsWith('(No speech') && (
+                  <span className="text-emerald-400">✓ Transcribed</span>
+                )}
+                {appPhase === 'processing' && (
+                  <span className="text-amber-400 animate-pulse">Transcribing...</span>
+                )}
+              </div>
+            </div>
+
+            {/* Card Body (Scrollable transcript text) */}
+            <div className="flex-1 min-h-[120px] overflow-y-auto p-3.5 font-mono text-xs leading-relaxed text-zinc-200 bg-zinc-950/80">
+              {transcript ? (
+                <p className="whitespace-pre-wrap">{transcript}</p>
+              ) : appPhase === 'processing' ? (
+                <div className="flex items-center gap-2 text-amber-400/90 py-4">
+                  <span className="inline-block animate-spin">⠋</span>
+                  <span>Transcribing Hinglish audio via Gnani Prisma v3...</span>
+                </div>
+              ) : (
+                <p className="text-zinc-600 italic">
+                  Your spoken Hinglish or English explanation will be transcribed here in real-time...
+                </p>
+              )}
+            </div>
+
+            {/* STT Error Banner */}
+            {sttError && (
+              <div className="shrink-0 p-2.5 bg-rose-950/60 border-t border-rose-800/80 text-rose-300 font-mono text-[11px] flex items-start gap-1.5">
+                <span className="text-rose-400 font-bold">!</span>
+                <div className="flex-1 whitespace-pre-wrap">{sttError}</div>
+              </div>
+            )}
+
+            {/* Card Footer: Recorded WAV Mini-Player */}
+            {audioUrl && appPhase !== 'recording' && (
+              <div className="shrink-0 border-t border-zinc-800/80 bg-zinc-900/80 px-3 py-2 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span className="hidden sm:inline">Candidate Audio</span>
+                  <span className="text-zinc-600">(16kHz)</span>
+                </div>
+                <audio controls src={audioUrl} className="h-6 w-44 max-w-full opacity-80" />
               </div>
             )}
           </section>
-        )}
+        </aside>
 
-        {/* Terminal Card 5: Coach Scorecard (Phase 2 Brain) */}
-        <CoachFeedback
-          feedbackText={coachFeedback}
-          isStreaming={isCoachStreaming}
-          error={coachError}
-          onRetry={handleRetryCoaching}
-        />
+        {/* Right Pane — Interviewer Evaluation (62% width on desktop, independent scroll) */}
+        <section className="w-full lg:w-[62%] flex-1 min-h-0 overflow-y-auto p-4 lg:p-5 space-y-4 bg-zinc-950/50">
+          {/* 1. Sticky Top Header Banner: Unified Score + Audio Player + Verbal Summary */}
+          <AudioPlayerWidget
+            audioBlob={ttsAudioBlob}
+            isLoading={isTtsLoading}
+            error={ttsError}
+            verbalSummary={verbalSummaryText}
+            score={currentScore}
+            isStreaming={isCoachStreaming}
+            autoPlay={true}
+            onReplay={handleSynthesizePastSession}
+          />
+
+          {/* 2. Structured Scorecard Grid: Remaining Sections */}
+          <CoachFeedback
+            feedbackText={coachFeedback}
+            isStreaming={isCoachStreaming}
+            error={coachError}
+            onRetry={handleRetryCoaching}
+          />
+        </section>
       </main>
 
       {/* History Slide-out Drawer */}

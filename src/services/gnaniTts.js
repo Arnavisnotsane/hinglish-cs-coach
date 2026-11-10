@@ -11,8 +11,8 @@
 export function extractVerbalSummary(markdownText) {
   if (!markdownText) return ''
 
-  // Look for ### 🎙️ Verbal Summary or ### Verbal Summary up to the next ### or end of text
-  const match = markdownText.match(/###\s*(?:🎙️\s*)?Verbal Summary\s*([\s\S]*?)(?=###|$)/i)
+  // Look for ### Verbal Summary (with or without preceding emojis/icons) up to the next ### or end of text
+  const match = markdownText.match(/###\s*(?:[^\w\s]+\s*)?Verbal Summary\s*([\s\S]*?)(?=###|$)/i)
   if (!match || !match[1]) return ''
 
   // Clean out markdown formatting symbols (*, _, `, #, >, ~) and normalize spacing
@@ -30,7 +30,7 @@ export function extractVerbalSummary(markdownText) {
  */
 export function extractScore(markdownText) {
   if (!markdownText) return null
-  const match = markdownText.match(/###\s*(?:📊\s*)?Score:\s*(\d+)\s*\/\s*10/i)
+  const match = markdownText.match(/###\s*(?:[^\w\s]+\s*)?Score:\s*(\d+)\s*\/\s*10/i)
   if (match && match[1]) {
     const val = parseInt(match[1], 10)
     return isNaN(val) ? null : val

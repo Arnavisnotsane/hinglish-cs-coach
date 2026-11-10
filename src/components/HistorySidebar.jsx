@@ -32,25 +32,25 @@ export function HistorySidebar({
       {isOpen && (
         <div
           onClick={onClose}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+          className="fixed inset-0 bg-black/70 backdrop-blur-xs z-40 transition-opacity"
           aria-hidden="true"
         />
       )}
 
       {/* Slide-out Drawer */}
       <aside
-        className={`fixed top-0 left-0 h-full w-84 sm:w-96 bg-gray-900 border-r border-gray-800 z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${
-          isOpen ? 'translate-x-0 shadow-2xl shadow-black/80' : '-translate-x-full'
+        className={`fixed top-0 left-0 h-full w-84 sm:w-96 bg-zinc-950 border-r border-zinc-800/90 z-50 transform transition-transform duration-200 ease-in-out flex flex-col ${
+          isOpen ? 'translate-x-0 shadow-2xl shadow-black/90' : '-translate-x-full'
         }`}
         aria-label="Past Sessions History"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-800">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/80 bg-zinc-900/50">
           <div className="flex items-center gap-2">
-            <span className="text-green-400 font-mono text-sm font-semibold tracking-wide">
-              [History]
+            <span className="text-zinc-200 font-mono text-xs font-semibold uppercase tracking-wider">
+              HISTORY
             </span>
-            <span className="text-xs text-gray-500 font-mono">
+            <span className="text-[11px] text-zinc-500 font-mono">
               ({sessions.length}/30)
             </span>
           </div>
@@ -60,7 +60,7 @@ export function HistorySidebar({
               <button
                 type="button"
                 onClick={handleClearAll}
-                className="text-[11px] font-mono text-red-400 hover:text-red-300 px-2 py-1 rounded hover:bg-red-950/40 border border-red-900/40 transition-colors"
+                className="text-[10px] font-mono text-rose-400 hover:text-rose-300 px-2 py-0.5 rounded hover:bg-rose-950/40 border border-rose-900/40 transition-colors"
                 title="Clear all stored sessions"
               >
                 Clear All
@@ -69,7 +69,7 @@ export function HistorySidebar({
             <button
               type="button"
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-100 p-1.5 rounded-md hover:bg-gray-800 transition-colors font-mono text-base"
+              className="text-zinc-400 hover:text-zinc-100 p-1 rounded hover:bg-zinc-800 transition-colors font-mono text-sm"
               aria-label="Close history sidebar"
             >
               ✕
@@ -78,12 +78,12 @@ export function HistorySidebar({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5">
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
           {sessions.length === 0 ? (
-            <div className="h-64 flex flex-col items-center justify-center text-center p-6 border border-dashed border-gray-800 rounded-lg">
+            <div className="h-64 flex flex-col items-center justify-center text-center p-6 border border-dashed border-zinc-800/80 rounded-lg">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-10 w-10 text-gray-600 mb-3"
+                className="h-8 w-8 text-zinc-700 mb-2.5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -95,11 +95,11 @@ export function HistorySidebar({
                   d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                 />
               </svg>
-              <p className="text-sm font-mono text-gray-400 font-medium">
+              <p className="text-xs font-mono text-zinc-400 font-medium">
                 No past sessions yet
               </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Explain a topic to see your evaluations and transcripts saved here.
+              <p className="text-[11px] text-zinc-500 mt-1">
+                Explain a DSA topic to see evaluations and scores saved here.
               </p>
             </div>
           ) : (
@@ -110,21 +110,21 @@ export function HistorySidebar({
                   onSelectSession?.(session)
                   onClose?.()
                 }}
-                className="group relative p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800/80 border border-gray-700/60 hover:border-green-500/60 transition-all cursor-pointer shadow-sm"
+                className="group relative p-3 rounded-lg bg-zinc-900/60 hover:bg-zinc-900 border border-zinc-800/80 hover:border-zinc-700 transition-all cursor-pointer shadow-xs"
               >
                 {/* Topic & Score Bar */}
                 <div className="flex items-start justify-between gap-2 pr-6">
-                  <span className="font-mono text-xs font-semibold text-green-400 group-hover:text-green-300 line-clamp-1">
+                  <span className="font-mono text-xs font-semibold text-zinc-200 group-hover:text-emerald-300 line-clamp-1">
                     {session.topic}
                   </span>
                   {session.score !== null && session.score !== undefined && (
                     <span
                       className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${
                         session.score >= 7
-                          ? 'bg-green-950 text-green-400 border border-green-800/80'
+                          ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/80'
                           : session.score >= 4
-                          ? 'bg-yellow-950 text-yellow-400 border border-yellow-800/80'
-                          : 'bg-red-950 text-red-400 border border-red-800/80'
+                          ? 'bg-amber-950/80 text-amber-400 border border-amber-800/80'
+                          : 'bg-rose-950/80 text-rose-400 border border-rose-800/80'
                       }`}
                     >
                       {session.score}/10
@@ -133,20 +133,20 @@ export function HistorySidebar({
                 </div>
 
                 {/* Date & Time */}
-                <div className="text-[10px] font-mono text-gray-500 mt-0.5">
+                <div className="text-[10px] font-mono text-zinc-500 mt-0.5">
                   {formatDate(session.timestamp)}
                 </div>
 
                 {/* Transcript snippet */}
                 {session.transcript && (
-                  <p className="text-xs text-gray-300 mt-2 line-clamp-2 font-mono leading-relaxed">
+                  <p className="text-xs text-zinc-400 mt-1.5 line-clamp-2 font-mono leading-relaxed">
                     &ldquo;{session.transcript}&rdquo;
                   </p>
                 )}
 
                 {/* Verbal Summary quote if available */}
                 {session.verbalSummary && (
-                  <p className="text-[11px] text-gray-400 mt-1.5 line-clamp-1 italic border-l border-green-500/50 pl-1.5">
+                  <p className="text-[11px] text-zinc-300 mt-1 line-clamp-1 italic border-l border-emerald-500/60 pl-1.5">
                     {session.verbalSummary}
                   </p>
                 )}
@@ -159,7 +159,7 @@ export function HistorySidebar({
                       e.stopPropagation()
                       onDeleteSession(session.id)
                     }}
-                    className="absolute top-2.5 right-2.5 p-1 rounded text-gray-500 hover:text-red-400 hover:bg-gray-750 transition-colors opacity-70 group-hover:opacity-100"
+                    className="absolute top-2.5 right-2.5 p-1 rounded text-zinc-500 hover:text-rose-400 hover:bg-zinc-800 transition-colors opacity-70 group-hover:opacity-100"
                     title="Delete session"
                     aria-label="Delete session"
                   >
@@ -185,9 +185,9 @@ export function HistorySidebar({
         </div>
 
         {/* Footer */}
-        <div className="p-3 border-t border-gray-800 text-[11px] font-mono text-gray-500 text-center flex items-center justify-between px-4">
+        <div className="p-3 border-t border-zinc-800/80 text-[10px] font-mono text-zinc-500 flex items-center justify-between px-4 bg-zinc-900/40">
           <span>HinglishCS Coach</span>
-          <span className="text-green-500">v0.3 • Phase 3</span>
+          <span className="text-emerald-500">v0.4 Workbench</span>
         </div>
       </aside>
     </>

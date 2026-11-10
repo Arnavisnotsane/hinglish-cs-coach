@@ -1,29 +1,72 @@
 import ReactMarkdown from 'react-markdown'
 
 /**
- * Renders the streamed coach feedback using react-markdown styled for a dark code terminal.
+ * Strips Verbal Summary and Score sections from the streamed feedback,
+ * returning the remaining structured scorecard sections:
+ * - Logic Check
+ * - Edge Cases Missed
+ * - Time & Space Complexity
+ * - Ideal Interview Explanation
+ */
+export function getRemainingSections(markdown) {
+  if (!markdown) return ''
+
+  // Look for Logic Check as the start of the structured scorecard
+  const logicMatch = markdown.match(/###\s*(?:🔍\s*)?Logic Check/i)
+  if (logicMatch && logicMatch.index !== undefined) {
+    return markdown.slice(logicMatch.index)
+  }
+
+  // Fallback: check if other subsequent sections are present
+  const otherMatch = markdown.match(
+    /###\s*(?:⚠️|⏱️|💡)?\s*(?:Edge Cases|Time & Space|Ideal Interview)/i
+  )
+  if (otherMatch && otherMatch.index !== undefined) {
+    return markdown.slice(otherMatch.index)
+  }
+
+  // If streaming and only Verbal Summary or Score has arrived, return empty
+  if (
+    markdown.includes('### Verbal Summary') ||
+    markdown.includes('### 🎙️ Verbal Summary') ||
+    markdown.includes('### Score') ||
+    markdown.includes('### 📊 Score')
+  ) {
+    return ''
+  }
+
+  return markdown
+}
+
+/**
+ * Structured Scorecard Grid for Interviewer Evaluation.
+ * Renders remaining sections with custom SVG indicators and strict inline-code handling.
  */
 export function CoachFeedback({
   feedbackText = '',
   isStreaming = false,
   error = null,
-  onRetry,
+  onRetry = null,
 }) {
+  const scorecardContent = getRemainingSections(feedbackText)
+
   return (
-    <section className="bg-gray-900/90 rounded-xl border border-gray-800 p-5 shadow-xl space-y-4">
+    <div className="bg-zinc-900/70 rounded-xl border border-zinc-800/80 p-4 space-y-3">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-800/80 pb-3">
+      <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-gray-400">coach://gemini-evaluation</span>
+          <span className="text-[11px] font-mono tracking-wider uppercase font-semibold text-zinc-400">
+            STRUCTURED SCORECARD
+          </span>
           {isStreaming && (
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono bg-yellow-950/80 text-yellow-400 border border-yellow-800/60 animate-pulse">
-              <span className="h-1.5 w-1.5 rounded-full bg-yellow-400" />
-              Streaming feedback...
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono bg-amber-950/80 text-amber-300 border border-amber-800/60 animate-pulse">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+              Streaming analysis...
             </span>
           )}
           {!isStreaming && feedbackText && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-green-950/80 text-green-400 border border-green-800/60">
-              ✓ Evaluation Complete
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950/80 text-emerald-300 border border-emerald-800/60">
+              ✓ Ready
             </span>
           )}
         </div>
@@ -32,7 +75,7 @@ export function CoachFeedback({
           <button
             type="button"
             onClick={onRetry}
-            className="text-xs font-mono text-gray-400 hover:text-green-400 flex items-center gap-1 transition-colors px-2 py-1 rounded hover:bg-gray-800"
+            className="text-[11px] font-mono text-zinc-400 hover:text-emerald-400 flex items-center gap-1 transition-colors px-2 py-0.5 rounded hover:bg-zinc-800 border border-zinc-800"
             title="Re-run evaluation on the current transcript"
           >
             <span>↻</span> Re-evaluate
@@ -42,16 +85,16 @@ export function CoachFeedback({
 
       {/* Error Callout */}
       {error && (
-        <div className="p-3.5 rounded-lg bg-red-950/70 border border-red-800 text-red-300 font-mono text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="p-3 rounded-lg bg-rose-950/70 border border-rose-800 text-rose-300 font-mono text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           <div className="flex items-start gap-2">
-            <span className="text-red-400 font-bold text-sm">✕</span>
+            <span className="text-rose-400 font-bold">✕</span>
             <span className="leading-relaxed">{error}</span>
           </div>
           {onRetry && (
             <button
               type="button"
               onClick={onRetry}
-              className="self-start sm:self-center px-3 py-1.5 bg-red-900/60 hover:bg-red-800 text-red-200 border border-red-700 rounded text-xs font-mono font-medium transition-colors"
+              className="self-start sm:self-center px-2.5 py-1 bg-rose-900/60 hover:bg-rose-800 text-rose-200 border border-rose-700 rounded text-xs font-mono font-medium transition-colors"
             >
               Retry
             </button>
@@ -59,83 +102,190 @@ export function CoachFeedback({
         </div>
       )}
 
-      {/* Markdown Content or Placeholder */}
-      <div className="min-h-48 rounded-lg bg-gray-950/90 border border-gray-800/90 p-4 sm:p-5 font-sans text-sm leading-relaxed overflow-x-auto">
-        {feedbackText ? (
+      {/* Markdown Content */}
+      <div className="min-h-40 rounded-lg bg-zinc-950/90 border border-zinc-800/80 p-4 font-sans text-sm leading-relaxed overflow-x-auto">
+        {scorecardContent ? (
           <div className="space-y-1">
             <ReactMarkdown
               components={{
-                h3: ({ children }) => (
-                  <h3 className="font-mono text-sm font-bold text-green-400 mt-5 mb-2.5 pb-1 border-b border-gray-800/80 first:mt-0 flex items-center gap-1.5 tracking-wide">
-                    {children}
-                  </h3>
-                ),
+                h3: ({ children }) => {
+                  const rawText =
+                    typeof children === 'string'
+                      ? children
+                      : Array.isArray(children)
+                      ? children
+                          .map((c) => (typeof c === 'string' ? c : ''))
+                          .join('')
+                      : String(children || '')
+
+                  const cleanTitle = rawText.replace(/[🎙️📊🔍⚠️⏱️💡]/g, '').trim()
+
+                  let icon = (
+                    <svg
+                      className="w-3.5 h-3.5 text-zinc-400 shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4 6h16M4 12h16M4 18h7"
+                      />
+                    </svg>
+                  )
+
+                  if (/logic check/i.test(cleanTitle)) {
+                    icon = (
+                      <svg
+                        className="w-3.5 h-3.5 text-emerald-400 shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    )
+                  } else if (/edge cases/i.test(cleanTitle)) {
+                    icon = (
+                      <svg
+                        className="w-3.5 h-3.5 text-amber-400 shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        />
+                      </svg>
+                    )
+                  } else if (/complexity/i.test(cleanTitle)) {
+                    icon = (
+                      <svg
+                        className="w-3.5 h-3.5 text-sky-400 shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    )
+                  } else if (/ideal/i.test(cleanTitle)) {
+                    icon = (
+                      <svg
+                        className="w-3.5 h-3.5 text-purple-400 shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M13 10V3L4 14h7v7l9-11h-7z"
+                        />
+                      </svg>
+                    )
+                  }
+
+                  return (
+                    <h3 className="font-mono text-xs font-semibold text-zinc-300 uppercase tracking-wider mt-5 mb-2.5 pb-1.5 border-b border-zinc-800/80 first:mt-1 flex items-center gap-2">
+                      {icon}
+                      <span>{cleanTitle}</span>
+                    </h3>
+                  )
+                },
                 h4: ({ children }) => (
-                  <h4 className="font-mono text-xs font-bold text-gray-300 mt-3 mb-1">
+                  <h4 className="font-mono text-xs font-semibold text-zinc-400 mt-3 mb-1">
                     {children}
                   </h4>
                 ),
                 p: ({ children }) => (
-                  <p className="text-sm text-gray-200 leading-relaxed my-2">
+                  <p className="text-sm text-zinc-300 leading-relaxed my-2">
                     {children}
                   </p>
                 ),
                 ul: ({ children }) => (
-                  <ul className="list-disc list-inside space-y-1.5 my-2.5 text-sm text-gray-300">
+                  <ul className="space-y-1.5 my-2 pl-4 list-disc text-sm text-zinc-300 marker:text-zinc-600">
                     {children}
                   </ul>
                 ),
                 li: ({ children }) => (
-                  <li className="text-sm text-gray-300 leading-relaxed">
+                  <li className="text-sm text-zinc-300 leading-relaxed">
                     {children}
                   </li>
                 ),
-                code: ({ inline, children }) => (
-                  <code
-                    className={
-                      inline
-                        ? 'bg-gray-800 text-green-300 px-1.5 py-0.5 rounded font-mono text-xs border border-gray-700/60'
-                        : 'block bg-gray-900 text-green-300 p-3 rounded-md font-mono text-xs border border-gray-800 my-2 overflow-x-auto'
-                    }
-                  >
-                    {children}
-                  </code>
-                ),
+                code: ({ node, inline, className, children, ...props }) => {
+                  const isInline = !className && !String(children).includes('\n')
+                  if (isInline) {
+                    return (
+                      <code
+                        className="inline px-1.5 py-0.5 rounded bg-zinc-800/90 text-emerald-300 font-mono text-[12.5px] border border-zinc-700/60 align-baseline mx-0.5"
+                        {...props}
+                      >
+                        {children}
+                      </code>
+                    )
+                  }
+                  return (
+                    <code
+                      className="block w-full bg-zinc-950 p-3.5 rounded-lg font-mono text-xs text-emerald-300 border border-zinc-800/80 overflow-x-auto my-2.5"
+                      {...props}
+                    >
+                      {children}
+                    </code>
+                  )
+                },
+                pre: ({ children }) => <div className="my-2">{children}</div>,
                 strong: ({ children }) => (
-                  <strong className="font-semibold text-gray-100">
+                  <strong className="font-semibold text-zinc-100">
                     {children}
                   </strong>
                 ),
                 blockquote: ({ children }) => (
-                  <blockquote className="border-l-2 border-green-500/60 pl-3 my-2 text-gray-400 italic font-mono text-xs">
+                  <blockquote className="border-l-2 border-emerald-500/60 pl-3 my-2 text-zinc-400 italic font-mono text-xs">
                     {children}
                   </blockquote>
                 ),
               }}
             >
-              {feedbackText}
+              {scorecardContent}
             </ReactMarkdown>
 
             {/* Live Typing Cursor */}
             {isStreaming && (
-              <span className="inline-block w-2 h-4 ml-1 bg-green-400 animate-pulse align-middle" />
+              <span className="inline-block w-2 h-3.5 ml-1 bg-emerald-400 animate-pulse align-middle" />
             )}
           </div>
         ) : isStreaming ? (
-          <div className="h-44 flex flex-col items-center justify-center text-center gap-2 text-yellow-400/90 font-mono text-xs">
+          <div className="h-36 flex flex-col items-center justify-center text-center gap-2 text-amber-400/90 font-mono text-xs">
             <div className="flex items-center gap-2">
-              <span className="animate-spin text-base">⠋</span>
-              <span>Gemini is analyzing your technical logic...</span>
+              <span className="animate-spin text-sm">⠋</span>
+              <span>Gemini is evaluating your technical logic...</span>
             </div>
-            <span className="text-gray-500 text-[11px]">
-              Checking approach, edge cases, and Big-O complexity
+            <span className="text-zinc-500 text-[11px]">
+              Checking algorithmic correctness, edge cases, and Big-O complexity
             </span>
           </div>
         ) : (
-          <div className="h-44 flex flex-col items-center justify-center text-center gap-2 text-gray-500 font-mono text-xs">
+          <div className="h-36 flex flex-col items-center justify-center text-center gap-1.5 text-zinc-500 font-mono text-xs">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-8 w-8 text-gray-700 mb-1"
+              className="h-7 w-7 text-zinc-700 mb-1"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -144,16 +294,16 @@ export function CoachFeedback({
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693l-1.57-.393m15.6 0l1.4 1.4a2.25 2.25 0 01.659 1.591v2.466a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25v-2.466a2.25 2.25 0 01.659-1.591l1.4-1.4"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
-            <p>Speak in Hinglish or English to get an instant technical scorecard.</p>
-            <p className="text-[11px] text-gray-600">
-              Evaluates: Concept Logic • Edge Cases • Big-O • FAANG Interview Standard
+            <p>Scorecard sections will appear here after explanation analysis.</p>
+            <p className="text-[11px] text-zinc-600">
+              Logic Check • Edge Cases Missed • Time & Space Complexity • Ideal Answer
             </p>
           </div>
         )}
       </div>
-    </section>
+    </div>
   )
 }

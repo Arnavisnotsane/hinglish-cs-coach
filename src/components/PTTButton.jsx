@@ -1,9 +1,10 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 /**
- * Push-To-Talk Button supporting both:
- * 1. Hold mode: Press & hold (>300ms) to record, release to submit
- * 2. Toggle mode: Quick click (<300ms) to start, click again to stop
+ * Compact, tactile Push-to-Talk stage with live timer and [Space] keycap badge.
+ * Supports both:
+ * 1. Spacebar or click-and-hold (>300ms) to record, release to submit
+ * 2. Quick tap / toggle (<300ms) to start, click again to stop
  */
 export function PTTButton({
   recorderState = 'idle',
@@ -15,17 +16,63 @@ export function PTTButton({
 }) {
   const holdTimerRef = useRef(null)
   const isHoldModeRef = useRef(false)
+  const isSpaceHeldRef = useRef(false)
 
   const isRecording = recorderState === 'recording'
   const isProcessing = recorderState === 'processing'
 
+  // Global Spacebar listener
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.code !== 'Space') return
+      // Ignore if user is typing in an input or textarea
+      const targetTag = e.target?.tagName?.toLowerCase()
+      if (targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select') {
+        return
+      }
+
+      if (e.repeat) return // Prevent repeated keydown events
+      e.preventDefault()
+
+      if (disabled || isProcessing) return
+
+      if (isRecording) {
+        onStop?.()
+        isSpaceHeldRef.current = false
+      } else {
+        isSpaceHeldRef.current = true
+        onStart?.()
+      }
+    }
+
+    const handleKeyUp = (e) => {
+      if (e.code !== 'Space') return
+      const targetTag = e.target?.tagName?.toLowerCase()
+      if (targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select') {
+        return
+      }
+
+      e.preventDefault()
+      if (isSpaceHeldRef.current && isRecording) {
+        isSpaceHeldRef.current = false
+        onStop?.()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+    }
+  }, [disabled, isProcessing, isRecording, onStart, onStop])
+
   const handlePointerDown = (e) => {
-    // Only react to main button click (left click / touch)
     if (e.button !== undefined && e.button !== 0) return
     if (disabled || isProcessing) return
 
     if (isRecording) {
-      // If already recording in toggle mode, clicking stops it
       return
     }
 
@@ -44,23 +91,9 @@ export function PTTButton({
     }
 
     if (isHoldModeRef.current) {
-      // Hold mode ended -> stop
       isHoldModeRef.current = false
       onStop?.()
     } else {
-      // Quick tap / click detected (<300ms)
-      if (isRecording) {
-        onStop?.()
-      } else {
-        onStart?.()
-      }
-    }
-  }
-
-  const handleKeyDown = (e) => {
-    if (e.code === 'Space' || e.code === 'Enter') {
-      e.preventDefault()
-      if (disabled || isProcessing) return
       if (isRecording) {
         onStop?.()
       } else {
@@ -71,32 +104,42 @@ export function PTTButton({
 
   const isWarning = secondsRecorded >= 20
 
-  return (
-    <div className="flex flex-col items-center justify-center gap-3 select-none">
-      <div className="relative flex items-center justify-center">
-        {/* Pulsing ring during recording */}
-        {isRecording && (
-          <span className="absolute inline-flex h-28 w-28 rounded-full bg-red-500/20 animate-ping pointer-events-none" />
-        )}
+  const formatSeconds = (sec) => {
+    const s = Math.floor(sec)
+    return s < 10 ? `0${s}` : `${s}`
+  }
 
+  return (
+    <div className="w-full bg-zinc-900/70 border border-zinc-800/80 rounded-lg p-3.5 flex flex-col items-center justify-center gap-2.5 select-none transition-colors">
+      <div className="w-full flex items-center justify-between text-[11px] font-mono tracking-wider text-zinc-400">
+        <span className="uppercase font-semibold">PUSH-TO-TALK STUDIO</span>
+        <div className="flex items-center gap-1.5">
+          <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-zinc-800 text-zinc-300 rounded border border-zinc-700/80 shadow-sm">
+            Space
+          </kbd>
+          <span className="text-[10px] text-zinc-500">to speak</span>
+        </div>
+      </div>
+
+      {/* Button Stage */}
+      <div className="relative flex items-center justify-center my-1">
         <button
           type="button"
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
-          onKeyDown={handleKeyDown}
           disabled={disabled || isProcessing}
           aria-label={isRecording ? 'Stop recording' : 'Start push to talk recording'}
-          className={`relative z-10 w-24 h-24 rounded-full flex flex-col items-center justify-center transition-all duration-200 border-2 shadow-lg focus:outline-none focus:ring-4 focus:ring-green-500/30 ${
+          className={`relative z-10 w-16 h-16 rounded-full flex flex-col items-center justify-center transition-all duration-150 border focus:outline-none focus:ring-2 focus:ring-zinc-600 ${
             isRecording
-              ? 'bg-red-950/80 border-red-500 text-red-400 shadow-red-900/40 scale-105'
+              ? 'bg-rose-950/80 border-rose-500 text-rose-300 shadow-inner scale-102 ring-2 ring-rose-500/20'
               : isProcessing
-              ? 'bg-yellow-950/40 border-yellow-500/80 text-yellow-400 cursor-not-allowed'
-              : 'bg-gray-800 hover:bg-gray-750 border-gray-600 hover:border-green-500/70 text-gray-200 hover:text-green-400 active:scale-95'
-          } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              ? 'bg-amber-950/40 border-amber-500/60 text-amber-300 cursor-not-allowed'
+              : 'bg-zinc-800 hover:bg-zinc-750 border-zinc-700 hover:border-zinc-500 text-zinc-200 active:scale-96 cursor-pointer shadow-sm'
+          } ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
         >
           {isProcessing ? (
             <svg
-              className="animate-spin h-8 w-8 text-yellow-400"
+              className="animate-spin h-5 w-5 text-amber-400"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -116,53 +159,48 @@ export function PTTButton({
               />
             </svg>
           ) : isRecording ? (
-            <div className="flex flex-col items-center">
-              <span className="w-5 h-5 rounded-sm bg-red-500 mb-1 animate-pulse" />
-              <span className="text-[10px] font-mono tracking-wider font-bold">STOP</span>
-            </div>
+            <span className="w-4 h-4 rounded-sm bg-rose-500 animate-pulse" />
           ) : (
-            <div className="flex flex-col items-center">
-              {/* Mic Icon */}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-8 w-8 transition-transform group-hover:scale-110"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-                />
-              </svg>
-              <span className="text-[10px] font-mono tracking-wider mt-0.5 text-gray-400">
-                PTT
-              </span>
-            </div>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 text-zinc-300"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.75}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15a3 3 0 003-3V6a3 3 0 00-3-3 3 3 0 00-3 3v6a3 3 0 003 3z"
+              />
+            </svg>
           )}
         </button>
       </div>
 
-      {/* Countdown and Mode Hint */}
-      <div className="text-center">
+      {/* Status Bar */}
+      <div className="text-center font-mono text-[11px] h-4">
         {isRecording ? (
           <div
-            className={`font-mono text-xs font-semibold tracking-wider ${
-              isWarning ? 'text-amber-400 animate-pulse font-bold' : 'text-red-400'
+            className={`flex items-center gap-1.5 ${
+              isWarning ? 'text-amber-400 font-bold' : 'text-rose-400'
             }`}
           >
-            ● REC {secondsRecorded}s / {maxSeconds}s {isWarning && '(Gnani 30s limit)'}
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+            <span>
+              REC 00:{formatSeconds(secondsRecorded)} / 00:{formatSeconds(maxSeconds)}
+            </span>
+            {isWarning && <span className="text-[10px] text-amber-500">(limit approaching)</span>}
           </div>
         ) : isProcessing ? (
-          <div className="font-mono text-xs text-yellow-400 tracking-wider animate-pulse">
+          <span className="text-amber-400/90 animate-pulse">
             Transcribing via Gnani Prisma v3...
-          </div>
+          </span>
+        ) : disabled ? (
+          <span className="text-zinc-500">Select a topic above to enable mic</span>
         ) : (
-          <div className="text-xs text-gray-400 font-mono">
-            Hold to talk <span className="text-gray-600">|</span> Click to toggle
-          </div>
+          <span className="text-zinc-400">Hold Space or click to talk</span>
         )}
       </div>
     </div>
