@@ -6,6 +6,27 @@ Built with a high-density modern edtech split-pane workbench, floating pill navi
 
 ---
 
+## 📄 1-Page Solution Pitch
+
+### 1. The Core Problem
+Over 80% of software engineering students across India think, conceptualize, and verbalize complex algorithmic reasoning in **Hinglish** (a natural code-mix of Hindi and English). However:
+- **Language Bias:** Mainstream mock interview platforms force rigid English syntax, judging candidates on spoken fluency rather than actual computer science depth.
+- **ASR Failure on Tech Jargon:** Standard speech-to-text engines misinterpret code-mixed technical phrases (e.g., confusing "two-heaps" with "two hips" or misinterpreting $O(\log n)$).
+- **Passive Practice:** Reading solutions on LeetCode does not build verbal interview articulation—the #1 point of failure in actual FAANG/top-tier company interviews.
+
+### 2. The Solution: HinglishCS Coach
+**HinglishCS Coach** is a real-time, voice-first DSA technical interview workbench built for bilingual candidates. It decouples spoken communication style from algorithmic correctness:
+- **Ears (Gnani Prisma v3 ASR):** Accurately transcribes phonetic Hinglish with domain-specific biasing for DSA vocabulary (BFS/DFS, heapify, memoization, two-pointers, Big-O).
+- **Brain (Google Gemini 3.8 Flash):** A language-agnostic interviewer engine that ignores grammar quirks to rigorously assess technical logic, unhandled edge cases, and time/space complexity trade-offs via a structured scorecard.
+- **Mouth (Gnani Timbre v3 TTS):** Closes the conversational loop using persona *Avinash* (authoritative Indian mentor voice) to deliver concise, spoken verbal coaching.
+
+### 3. Key Innovations & Impact
+- **Sub-Second First-Token Latency:** Leverages `thinkingBudget: 0` alongside parallel TTS triggering (speech synthesis fires the moment the scorecard header is detected in the SSE stream) to eliminate conversational lag.
+- **Zero-Trust Key Security:** Architecture utilizes server-side Vite middleware to ensure enterprise credentials never leak to the client bundle.
+- **Democratizing Tech Placement:** Bridges the confidence gap for Tier-2/Tier-3 engineering students across India, allowing them to master FAANG-level problem explanation in their natural communication style.
+
+---
+
 ## 🌟 Architecture & Pipeline
 
 ```
